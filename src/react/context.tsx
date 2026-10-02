@@ -1,16 +1,14 @@
 import { createContext, useContext } from "react";
-import type { EngineAPI, EngineStateSnapshot } from "../core/types";
+import type { EngineAPI } from "../core/types";
 
 export interface ScrollVideoContextValue {
   api: EngineAPI | null;
-  state: EngineStateSnapshot | null;
   sectionDisplayMode: "layered" | "exclusive" | "crossfade";
   crossfadeDurationMs: number;
 }
 
 export const ScrollVideoContext = createContext<ScrollVideoContextValue>({
   api: null,
-  state: null,
   sectionDisplayMode: "layered",
   crossfadeDurationMs: 400,
 });

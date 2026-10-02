@@ -1,15 +1,14 @@
-import { ScrollVideo, Section } from "./lib";
+import { ScrollVideo, Section } from "vidscroll";
 import "./index.css";
-import { easing } from "./lib/core/easing";
 
 function App() {
   return (
     <ScrollVideo
-      easing={easing.inOutQuad}
-      src="/animate.mp4"
+      src="/catAnime.mp4"
       pixelsPerFrame={10}
       bufferFrames={6}
       fps={30}
+      smoothScroll
       sectionDisplayMode="crossfade"
       crossfadeDurationMs={600}
     >
@@ -24,8 +23,8 @@ function App() {
       </Section>
       <Section
         id="mid"
-        start={0.33}
-        end={0.66}
+        fromTime={20}
+        toTime={40}
         className="panel"
         activeClassName="active"
       >

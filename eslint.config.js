@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'dist-demo']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -18,6 +18,13 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+  },
+  {
+    files: ['bin/**/*.mjs'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 ])

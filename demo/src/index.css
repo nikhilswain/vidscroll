@@ -37,15 +37,6 @@ body {
   pointer-events: auto;
 }
 
-.panel[data-active="false"] {
-  opacity: 0.15;
-  transition: opacity 0.4s ease;
-}
-.panel[data-active="true"] {
-  opacity: 1;
-  transition: opacity 0.4s ease;
-}
-
 /* Optional accent per section (demo) */
 .panel:nth-of-type(1) h1 {
   color: #ffdd55;
@@ -55,38 +46,4 @@ body {
 }
 .panel:nth-of-type(3) h1 {
   color: #ff7ad9;
-}
-
-.video-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;
-}
-
-/* Make video fill screen properly */
-.video-element {
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  display: block;
-  transition: opacity 0.3s ease;
-}
-
-.loading-indicator,
-.error-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 18px;
-  z-index: 10;
-  text-align: center;
-}
-
-.error-indicator {
-  color: #ff6b6b;
 }

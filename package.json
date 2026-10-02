@@ -1,28 +1,72 @@
 {
   "name": "vidscroll",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Scroll-scrubbed video for React. Smooth on any MP4/WebM: videos with sparse keyframes are re-encoded in the browser automatically.",
+  "keywords": [
+    "react",
+    "scroll",
+    "video",
+    "scrub",
+    "scrollytelling",
+    "scroll-animation",
+    "webcodecs"
+  ],
+  "author": "Nikhil Kumar Swain",
+  "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "vidscroll": "./bin/vidscroll.mjs"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsup",
+    "build:demo": "vite build",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "encode": "node bin/vidscroll.mjs encode",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run build"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "ffmpeg-static": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ffmpeg-static": {
+      "optional": true
+    }
   },
   "dependencies": {
-    "gsap": "^3.13.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "mediabunny": "^1.61.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@types/node": "^24.19.1",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.3",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "ffmpeg-static": "^5.3.0",
     "globals": "^16.4.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tsup": "^8.5.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.44.0",
     "vite": "^7.1.7"
