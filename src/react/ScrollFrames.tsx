@@ -6,6 +6,7 @@ import { acquireSmoothScroll } from "../core/smoothScroll";
 import type { SmoothScrollOptions } from "../core/smoothScroll";
 import type { EngineAPI, EngineOptions } from "../core/types";
 import { ScrollVideoContext } from "./context";
+import { useVideoProgressVariable } from "./hooks";
 import { BaseStyles } from "./styles";
 
 export interface ScrollFramesProps
@@ -83,6 +84,7 @@ export function ScrollFrames({
     };
   }, [count, smoothOn, lengthKey]);
 
+  useVideoProgressVariable(api, containerRef);
   const contextValue = useMemo(() => ({ api }), [api]);
 
   return (

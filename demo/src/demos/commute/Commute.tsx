@@ -1,5 +1,5 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { ScrollVideo, Section, useScrollVideo } from "vidscroll";
+import { useState, useSyncExternalStore } from "react";
+import { ScrollVideo, Section, useScrollVideo, useScrollVideoUpdate } from "vidscroll";
 import "./commute.css";
 
 const CHAPTERS = [
@@ -39,19 +39,13 @@ function ChapterRail() {
   const { api } = useScrollVideo();
   const [current, setCurrent] = useState(0);
 
-  useEffect(() => {
-    if (!api) return;
-    const onUpdate = ({ linearProgress, duration }: { linearProgress: number; duration: number }) => {
-      const time = linearProgress * duration;
-      let index = 0;
-      CHAPTERS.forEach((c, i) => {
-        if (time >= c.at - 0.05) index = i;
-      });
-      setCurrent(index);
-    };
-    api.on("update", onUpdate);
-    return () => api.off("update", onUpdate);
-  }, [api]);
+  useScrollVideoUpdate(({ time }) => {
+    let index = 0;
+    CHAPTERS.forEach((c, i) => {
+      if (time >= c.at - 0.05) index = i;
+    });
+    setCurrent(index);
+  });
 
   return (
     <nav className="chapters" aria-label="Chapters">

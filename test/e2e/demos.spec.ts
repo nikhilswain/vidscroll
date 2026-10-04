@@ -86,6 +86,11 @@ test("poem lines reveal and dissolve one by one with --progress", async ({ page,
   expect(left[2]).toBeLessThan(0.8);
   expect(left[4]).toBe(1);
 
+  const lineScale = await page
+    .locator(".sunset-progress")
+    .evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+  expect(lineScale).toBeCloseTo(0.335, 2);
+
   await scrollBlock(page, 1);
   await settledTime(page);
   const coda = await page

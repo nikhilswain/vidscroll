@@ -115,7 +115,7 @@
   right: 0;
   height: 2px;
   background: rgb(255 243 227 / 0.75);
-  transform: scaleX(0);
+  transform: scaleX(var(--video-progress, 0));
   transform-origin: left;
 }
 

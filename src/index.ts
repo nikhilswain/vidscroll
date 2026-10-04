@@ -4,6 +4,8 @@ export { Section } from "./react/Section";
 export type { SectionProps } from "./react/Section";
 export { ScrollFrames } from "./react/ScrollFrames";
 export { useScrollVideo } from "./react/context";
+export { useScrollVideoState, useScrollVideoUpdate } from "./react/hooks";
+export type { ScrollVideoState } from "./react/hooks";
 
 export * from "./core/types";
 export { createEngine } from "./core/engine";

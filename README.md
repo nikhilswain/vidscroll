@@ -295,13 +295,55 @@ count, and let CSS stagger them:
 The "A Small Vigil" demo (`demo/src/demos/sunset`) uses this to make lines
 rise in and dissolve one by one.
 
+### Whole-video progress: `--video-progress`
+
+The outer block carries `--video-progress` (0–1 across the whole video), so
+any element inside a `ScrollVideo` can follow it without a `Section`:
+
+```css
+.progress-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: white;
+  transform-origin: left;
+  transform: scaleX(var(--video-progress));
+}
+```
+
+Inside a section, `--progress` is the section's own progress and
+`--video-progress` is still available.
+
 ### From JavaScript
 
-Inside a `ScrollVideo`, `useScrollVideo().api` gives access to the engine:
+These hooks work in any component inside a `ScrollVideo`:
 
-- `api.on("update", (state) => …)` fires on every frame the video moves, with
-  `state.linearProgress` (0–1), `frameIndex` and `activeSections`.
-- `api.getSectionProgress(id)` returns the same 0–1 value as `--progress`.
+```tsx
+import { useScrollVideoState, useScrollVideoUpdate } from "vidscroll";
+
+function Timecode() {
+  const { time, ready } = useScrollVideoState();
+  return <span>{ready ? time.toFixed(1) : "–"}s</span>;
+}
+
+function Dial() {
+  const ref = useRef<HTMLDivElement>(null);
+  useScrollVideoUpdate(({ linearProgress }) => {
+    ref.current!.style.rotate = `${linearProgress * 360}deg`;
+  });
+  return <div ref={ref} />;
+}
+```
+
+- `useScrollVideoState()` returns `{ ready, progress, time, frame,
+  activeSections }` and re-renders when they change, which is every frame
+  while scrolling. Fine for small components.
+- `useScrollVideoUpdate(callback)` calls back on every frame with the engine
+  state (`linearProgress`, `time`, `frameIndex`, `activeSections`) without
+  re-rendering. Use it with refs for anything per-frame.
+
+For actions, `useScrollVideo().api` gives access to the engine:
+
 - `api.scrollToTime(seconds)` and `api.scrollToProgress(p)` scroll the page
   to a point in the video, smoothly by default so the video scrubs through
   everything on the way. Pass `{ behavior: "instant" }` to jump. Useful for
@@ -313,6 +355,8 @@ function Chapters() {
   return <button onClick={() => api?.scrollToTime(12)}>Open water</button>;
 }
 ```
+
+- `api.getSectionProgress(id)` returns the same 0–1 value as `--progress`.
 
 ## Image sequences
 

@@ -97,6 +97,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
   const state: EngineStateSnapshot = {
     linearProgress: 0,
+    time: 0,
     frameIndex: 0,
     totalFrames: 0,
     duration: 0,
@@ -207,6 +208,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (framesMode && frames) {
       const frameFloat = applyEasing(smoothedProgress) * (totalFrames - 1);
       state.linearProgress = smoothedProgress;
+      state.time = frameFloat / fps;
       state.frameIndex = Math.min(
         totalFrames - 1,
         Math.max(0, Math.round(frameFloat))
@@ -228,6 +230,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       Math.max(0, Math.round((targetTime / duration) * (totalFrames - 1)))
     );
     state.linearProgress = smoothedProgress;
+    state.time = targetTime;
     state.frameIndex = frame;
     updateSections();
     emit("update", { ...state });

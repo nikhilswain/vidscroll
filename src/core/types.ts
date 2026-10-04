@@ -42,6 +42,7 @@ export interface NormalizedSection {
 
 export interface EngineStateSnapshot {
   linearProgress: number;
+  time: number;
   frameIndex: number;
   totalFrames: number;
   duration: number;

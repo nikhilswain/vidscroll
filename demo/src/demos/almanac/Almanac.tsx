@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { ScrollVideo, useScrollVideo } from "vidscroll";
+import { useRef } from "react";
+import { ScrollVideo, useScrollVideoUpdate } from "vidscroll";
 import "./almanac.css";
 
 const START_MIN = 18 * 60 + 42;
@@ -23,32 +23,25 @@ function readings(p: number) {
 type Field = keyof ReturnType<typeof readings>;
 
 function Readout() {
-  const { api } = useScrollVideo();
   const fields = useRef<Partial<Record<Field, HTMLElement | null>>>({});
   const trail = useRef<SVGPathElement>(null);
   const sun = useRef<SVGCircleElement>(null);
 
-  useEffect(() => {
-    if (!api) return;
-    const path = trail.current!;
+  useScrollVideoUpdate(({ linearProgress: p }) => {
+    const values = readings(p);
+    for (const key of Object.keys(values) as Field[]) {
+      const el = fields.current[key];
+      if (el && el.textContent !== values[key]) el.textContent = values[key];
+    }
+    const path = trail.current;
+    if (!path) return;
     const length = path.getTotalLength();
+    const point = path.getPointAtLength(p * length);
+    sun.current?.setAttribute("cx", point.x.toFixed(2));
+    sun.current?.setAttribute("cy", point.y.toFixed(2));
     path.style.strokeDasharray = `${length}`;
-
-    const onUpdate = ({ linearProgress: p }: { linearProgress: number }) => {
-      const values = readings(p);
-      for (const key of Object.keys(values) as Field[]) {
-        const el = fields.current[key];
-        if (el && el.textContent !== values[key]) el.textContent = values[key];
-      }
-      const point = path.getPointAtLength(p * length);
-      sun.current?.setAttribute("cx", point.x.toFixed(2));
-      sun.current?.setAttribute("cy", point.y.toFixed(2));
-      path.style.strokeDashoffset = `${length * (1 - p)}`;
-    };
-    onUpdate({ linearProgress: api.getState().linearProgress });
-    api.on("update", onUpdate);
-    return () => api.off("update", onUpdate);
-  }, [api]);
+    path.style.strokeDashoffset = `${length * (1 - p)}`;
+  });
 
   const bind = (key: Field) => (el: HTMLElement | null) => {
     fields.current[key] = el;

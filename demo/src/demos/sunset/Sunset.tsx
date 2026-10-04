@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
-import { ScrollVideo, Section, useScrollVideo } from "vidscroll";
+import { ScrollVideo, Section } from "vidscroll";
 import type { LoaderState } from "vidscroll";
 import "./sunset.css";
 
@@ -32,20 +31,6 @@ function Stanza({ lines, className }: { lines: string[]; className: string }) {
       ))}
     </div>
   );
-}
-
-function ProgressLine() {
-  const { api } = useScrollVideo();
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!api) return;
-    const onUpdate = ({ linearProgress }: { linearProgress: number }) => {
-      if (ref.current) ref.current.style.transform = `scaleX(${linearProgress})`;
-    };
-    api.on("update", onUpdate);
-    return () => api.off("update", onUpdate);
-  }, [api]);
-  return <div ref={ref} className="sunset-progress" aria-hidden="true" />;
 }
 
 const PHASE_TEXT: Record<LoaderState["phase"], string> = {
@@ -84,7 +69,7 @@ export function Sunset() {
       smoothScroll
       loader={(state) => <Loader {...state} />}
     >
-      <ProgressLine />
+      <div className="sunset-progress" aria-hidden="true" />
 
       <Section id="title" start={0} end={0.07} className="scene scene--title">
         <div className="shade" />
