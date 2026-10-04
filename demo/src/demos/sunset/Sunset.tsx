@@ -80,10 +80,8 @@ export function Sunset() {
   return (
     <ScrollVideo
       src="/catAnime.mp4"
-      pixelsPerFrame={10}
-      bufferFrames={6}
+      length="2400vh"
       smoothScroll
-      sectionDisplayMode="exclusive"
       loader={(state) => <Loader {...state} />}
     >
       <ProgressLine />

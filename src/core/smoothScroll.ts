@@ -109,3 +109,20 @@ export function createSmoothScroll(
     },
   };
 }
+
+let shared: { instance: SmoothScrollInstance; users: number } | null = null;
+
+export function acquireSmoothScroll(options?: SmoothScrollOptions): () => void {
+  if (!shared) shared = { instance: createSmoothScroll(options), users: 0 };
+  shared.users++;
+  let released = false;
+  return () => {
+    if (released || !shared) return;
+    released = true;
+    shared.users--;
+    if (shared.users === 0) {
+      shared.instance.destroy();
+      shared = null;
+    }
+  };
+}

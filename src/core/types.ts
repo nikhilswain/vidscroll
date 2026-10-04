@@ -1,13 +1,11 @@
 export interface EngineOptions {
+  container: HTMLElement;
+  stage?: HTMLElement;
+  length?: number | string;
   fps?: number;
-  pixelsPerFrame?: number;
-  bufferFrames?: number;
   easing?: (t: number) => number;
   video?: HTMLVideoElement;
   frames?: FrameRenderer;
-  scrollTarget?: Window | HTMLElement;
-  minScrollHeight?: number;
-  spacer?: HTMLDivElement | null;
   smoothingTauMs?: number;
   warmup?: boolean | number;
   debug?: boolean;
@@ -31,7 +29,6 @@ export interface SectionDescriptor {
   toTime?: number;
   fromFrame?: number;
   toFrame?: number;
-  mode?: string;
   data?: unknown;
 }
 
@@ -39,7 +36,6 @@ export interface NormalizedSection {
   id: string;
   start: number;
   end: number;
-  mode: string;
   data?: unknown;
   _active?: boolean;
 }

@@ -39,9 +39,9 @@ export const DEMOS: Demo[] = [
   },
   {
     slug: "basics",
-    title: "Basics",
+    title: "In a page",
     description:
-      "Three headings that switch at fixed points in the video: the smallest possible setup.",
+      "Two scroll videos placed between ordinary content. Each pins while you scroll through it, then the page carries on.",
     source: "demo/src/demos/basics/Basics.tsx",
     component: Basics,
   },

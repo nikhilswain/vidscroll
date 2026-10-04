@@ -79,10 +79,8 @@ export function Commute() {
     <ScrollVideo
       src="/commute.mp4"
       fit={portrait ? "contain" : "cover"}
-      pixelsPerFrame={14}
-      bufferFrames={6}
+      length="1700vh"
       smoothScroll
-      sectionDisplayMode="exclusive"
       loader={({ progress, error }) => (
         <div className="commute-loader">
           <p className="commute-loader__title">The Commute</p>

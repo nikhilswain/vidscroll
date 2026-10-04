@@ -1,8 +1,7 @@
-export { ScrollVideo, Section } from "./react/ScrollVideo";
-export type {
-  ScrollVideoProps,
-  LoaderState,
-} from "./react/ScrollVideo";
+export { ScrollVideo } from "./react/ScrollVideo";
+export type { ScrollVideoProps, LoaderState } from "./react/ScrollVideo";
+export { Section } from "./react/Section";
+export type { SectionProps } from "./react/Section";
 export { ScrollFrames } from "./react/ScrollFrames";
 export { useScrollVideo } from "./react/context";
 

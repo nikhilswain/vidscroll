@@ -22,7 +22,7 @@ import { ScrollVideo, Section } from "vidscroll";
 
 export default function Hero() {
   return (
-    <ScrollVideo src="/videos/hero.mp4" smoothScroll sectionDisplayMode="crossfade">
+    <ScrollVideo src="/videos/hero.mp4" length="400vh" smoothScroll>
       <Section start={0} end={0.33}>
         <h1>Intro</h1>
       </Section>
@@ -39,6 +39,11 @@ export default function Hero() {
 
 `src` is any URL to a video file: your public folder, a CDN, or a bundler
 import (`import heroUrl from "./hero.mp4"`).
+
+`<ScrollVideo>` is a block in your page like any other. It takes up its
+`length` of scrolling plus one screen; while you scroll through it, the
+video stays pinned to the viewport and plays, then the page carries on. Put
+content above and below it, or use several on one page.
 
 ## Using your video
 
@@ -177,24 +182,24 @@ owners download their uploads) and host the file yourself.
 | Prop | Default | Description |
 | --- | --- | --- |
 | `src` | required | Video file URL |
+| `length` | `"auto"` | How much scrolling plays the whole video: `"400vh"`, `"2000px"` or a number of px. `"auto"` is 40vh per second of video |
 | `optimize` | `true` | Re-encode slow-to-seek videos in the browser. `false` to disable, or an object: `maxKeyframeGap` (s, default 0.5), `maxResolution` (short side, default 720), `maxFps` (default 30; 15 for videos over 2 min), `cache` (default true) |
-| `smoothScroll` | `false` | Eased mouse-wheel scrolling. `true` or `{ tau, wheelMultiplier }` |
-| `pixelsPerFrame` | 12 | Scroll distance per video frame; sets how long the page is |
-| `fps` | 30 | Frame rate used to compute the scroll length |
-| `fit` | `"cover"` | `"cover"` fills the screen and crops; `"contain"` shows the whole frame with bars |
+| `smoothScroll` | `false` | Eased mouse-wheel scrolling for the page. `true` or `{ tau, wheelMultiplier }` |
+| `fit` | `"cover"` | `"cover"` fills the stage and crops; `"contain"` shows the whole frame |
 | `easing` | linear | `(t) => t` curve from scroll progress to video time; see `easing` export |
-| `sectionDisplayMode` | `"layered"` | `"layered"`, `"exclusive"`, or `"crossfade"` |
-| `crossfadeDurationMs` | 500 | Fade duration in crossfade mode |
 | `loader` | built-in | `false`, a React node, or `(state) => node` with `{ phase, progress, error }` |
 | `onLoad` | | `({ source, probe }) => void`. `source` is `"original"`, `"optimized"`, `"cache"` or `"stream"` |
 | `onError` | | `(error) => void`. Errors are `VidscrollError` with a `code` |
 | `fullPreload` | `true` | `false` streams the URL directly and skips optimization |
+| `className`, `style` | | Applied to the outer block |
+| `fps` | 30 | Frame rate used for frame-based section ranges |
 | `smoothingTauMs` | 100 (35 with `smoothScroll`) | How tightly the video follows the scroll position |
-| `bufferFrames` | 2 | Extra scroll so the last frame is reachable |
 | `warmup` | `true` | Touch the whole timeline once while loading. `false` or a step count |
 | `debug` / `onDebug` | | Log engine internals |
 
-Scrolling is locked while the video loads.
+Set `length` explicitly when there's content below the video: with
+`"auto"`, the block only knows its height once the video's duration has
+loaded, so content below it moves down at that point.
 
 ### Loader states
 
@@ -216,8 +221,39 @@ Scrolling is locked while the video loads.
 | `start`, `end` | Active range as scroll progress, 0–1 |
 | `fromTime`, `toTime` | Range in seconds of video (alternative to start/end) |
 | `fromFrame`, `toFrame` | Range in frames |
-| `className`, `activeClassName`, `inactiveClassName` | Classes toggled with the active state |
+| `className`, `activeClassName`, `inactiveClassName`, `style` | Styling; the class props toggle with the active state |
 | `as` | Element type (default `div`) |
+
+### Styling
+
+vidscroll ships no stylesheet to import. It adds a few default rules, all
+wrapped in `:where()` so they have zero specificity: any CSS you write wins,
+without `!important`. The defaults:
+
+- A section covers the video, centres its content, and fades in over 0.4 s
+  while active.
+- Elements expose their state as attributes you can target:
+
+| Selector | Element |
+| --- | --- |
+| `[data-vidscroll]` | Outer block (its height is the scroll length) |
+| `[data-vidscroll-stage]` | Pinned viewport-sized stage (`position: sticky`) |
+| `[data-vidscroll-media]` | The `<video>` |
+| `[data-vidscroll-section]` | Each section; `[data-active]` while active |
+| `[data-vidscroll-loader]` | Loading overlay |
+
+For example, a slower fade that also slides up:
+
+```css
+.caption {
+  transform: translateY(1rem);
+  transition: opacity 1s, transform 1s, visibility 0s 1s;
+}
+.caption[data-active] {
+  transform: none;
+  transition: opacity 1s, transform 1s;
+}
+```
 
 ### Scroll-driven styles with `--progress`
 

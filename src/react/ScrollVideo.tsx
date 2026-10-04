@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState, useId, useMemo } from "react";
-import type { PropsWithChildren, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
 import { createEngine } from "../core/engine";
 import { loadScrollVideo } from "../core/load";
 import type { LoadedVideo, OptimizeOptions } from "../core/load";
-import { createSmoothScroll } from "../core/smoothScroll";
+import { acquireSmoothScroll } from "../core/smoothScroll";
 import type { SmoothScrollOptions } from "../core/smoothScroll";
-import type { EngineAPI, EngineOptions, SectionDescriptor } from "../core/types";
-import { ScrollVideoContext, useScrollVideo } from "./context";
+import type { EngineAPI, EngineOptions } from "../core/types";
+import { ScrollVideoContext } from "./context";
+import { BaseStyles } from "./styles";
 
 export interface LoaderState {
   phase: "download" | "optimize" | "preparing" | "error";
@@ -14,7 +15,8 @@ export interface LoaderState {
   error?: Error;
 }
 
-export interface ScrollVideoProps extends Omit<EngineOptions, "video" | "spacer"> {
+export interface ScrollVideoProps
+  extends Omit<EngineOptions, "video" | "frames" | "container" | "stage"> {
   src: string;
   optimize?: boolean | OptimizeOptions;
   smoothScroll?: boolean | SmoothScrollOptions;
@@ -23,8 +25,8 @@ export interface ScrollVideoProps extends Omit<EngineOptions, "video" | "spacer"
   onLoad?: (info: Pick<LoadedVideo, "source" | "probe">) => void;
   onError?: (error: Error) => void;
   fit?: "cover" | "contain";
-  sectionDisplayMode?: "layered" | "exclusive" | "crossfade";
-  crossfadeDurationMs?: number;
+  className?: string;
+  style?: CSSProperties;
 }
 
 const PHASE_LABEL: Record<Exclude<LoaderState["phase"], "error">, string> = {
@@ -62,14 +64,7 @@ function DefaultLoader({ phase, progress, error }: LoaderState) {
           }}
         />
       </div>
-      <div
-        style={{
-          fontSize: 13,
-          opacity: 0.7,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-        }}
-      >
+      <div style={{ fontSize: 13, opacity: 0.7 }}>
         {`${PHASE_LABEL[phase as keyof typeof PHASE_LABEL]} ${Math.round(progress * 100)}%`}
       </div>
     </div>
@@ -79,12 +74,9 @@ function DefaultLoader({ phase, progress, error }: LoaderState) {
 export function ScrollVideo({
   src,
   optimize,
+  length,
   fps,
-  pixelsPerFrame,
-  bufferFrames,
   easing,
-  scrollTarget,
-  minScrollHeight,
   smoothingTauMs,
   warmup,
   smoothScroll,
@@ -95,12 +87,13 @@ export function ScrollVideo({
   onError,
   debug,
   onDebug,
+  className,
+  style,
   children,
-  sectionDisplayMode = "layered",
-  crossfadeDurationMs = 500,
 }: PropsWithChildren<ScrollVideoProps>) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const spacerRef = useRef<HTMLDivElement | null>(null);
   const [api, setApi] = useState<EngineAPI | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<LoaderState | null>({
@@ -109,12 +102,9 @@ export function ScrollVideo({
   });
 
   const optionsRef = useRef({
+    length,
     fps,
-    pixelsPerFrame,
-    bufferFrames,
     easing,
-    scrollTarget,
-    minScrollHeight,
     smoothingTauMs,
     warmup,
     smoothScroll,
@@ -125,12 +115,9 @@ export function ScrollVideo({
     onDebug,
   });
   optionsRef.current = {
+    length,
     fps,
-    pixelsPerFrame,
-    bufferFrames,
     easing,
-    scrollTarget,
-    minScrollHeight,
     smoothingTauMs,
     warmup,
     smoothScroll,
@@ -142,12 +129,12 @@ export function ScrollVideo({
   };
 
   const smoothOn = !!smoothScroll;
+  const lengthKey = String(length ?? "auto");
 
   useEffect(() => {
     if (!smoothOn) return;
     const o = optionsRef.current.smoothScroll;
-    const instance = createSmoothScroll(o && o !== true ? o : undefined);
-    return () => instance.destroy();
+    return acquireSmoothScroll(o && o !== true ? o : undefined);
   }, [smoothOn]);
 
   useEffect(() => {
@@ -194,19 +181,18 @@ export function ScrollVideo({
 
   useEffect(() => {
     const video = videoRef.current;
-    const spacer = spacerRef.current;
-    if (!video || !spacer || !videoUrl) return;
+    const container = containerRef.current;
+    const stage = stageRef.current;
+    if (!video || !container || !stage || !videoUrl) return;
     const o = optionsRef.current;
 
     const engine = createEngine({
       video,
-      spacer,
+      container,
+      stage,
+      length: o.length,
       fps: o.fps,
-      pixelsPerFrame: o.pixelsPerFrame,
-      bufferFrames: o.bufferFrames,
       easing: o.easing,
-      scrollTarget: o.scrollTarget,
-      minScrollHeight: o.minScrollHeight,
       smoothingTauMs: o.smoothingTauMs ?? (smoothOn ? 35 : undefined),
       warmup: o.warmup,
       debug: o.debug,
@@ -217,7 +203,7 @@ export function ScrollVideo({
       setApi(null);
       engine.destroy();
     };
-  }, [videoUrl, smoothOn]);
+  }, [videoUrl, smoothOn, lengthKey]);
 
   useEffect(() => {
     if (!api) return;
@@ -233,204 +219,34 @@ export function ScrollVideo({
     };
   }, [api]);
 
-  const locked = loading != null && loading.phase !== "error";
-  useEffect(() => {
-    if (!locked) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [locked]);
-
-  const contextValue = useMemo(
-    () => ({ api, sectionDisplayMode, crossfadeDurationMs }),
-    [api, sectionDisplayMode, crossfadeDurationMs]
-  );
+  const contextValue = useMemo(() => ({ api }), [api]);
 
   return (
     <ScrollVideoContext.Provider value={contextValue}>
-      <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
-        <video
-          ref={videoRef}
-          src={videoUrl ?? undefined}
-          muted
-          playsInline
-          preload="auto"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: fit,
-          }}
-        />
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-          {children}
+      <BaseStyles />
+      <div ref={containerRef} data-vidscroll="" className={className} style={style}>
+        <div ref={stageRef} data-vidscroll-stage="">
+          <video
+            ref={videoRef}
+            data-vidscroll-media=""
+            data-fit={fit}
+            src={videoUrl ?? undefined}
+            muted
+            playsInline
+            preload="auto"
+          />
+          <div data-vidscroll-overlay="">{children}</div>
+          {loading && loader !== false && (
+            <div data-vidscroll-loader="">
+              {typeof loader === "function"
+                ? loader(loading)
+                : loader != null
+                  ? loader
+                  : DefaultLoader(loading)}
+            </div>
+          )}
         </div>
       </div>
-      <div ref={spacerRef} />
-      {loading && loader !== false && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 50,
-            display: "grid",
-            placeItems: "center",
-            background: "#000",
-            color: "#fff",
-            fontFamily: "system-ui, sans-serif",
-          }}
-        >
-          {typeof loader === "function"
-            ? loader(loading)
-            : loader != null
-              ? loader
-              : DefaultLoader(loading)}
-        </div>
-      )}
     </ScrollVideoContext.Provider>
-  );
-}
-
-interface SectionProps extends Omit<SectionDescriptor, "id"> {
-  id?: string;
-  className?: string;
-  as?: React.ElementType;
-  children?: React.ReactNode;
-  inactiveClassName?: string;
-  activeClassName?: string;
-}
-
-export function Section({
-  id,
-  children,
-  className,
-  inactiveClassName,
-  activeClassName,
-  as = "div",
-  ...rest
-}: SectionProps) {
-  const autoId = useId();
-  const sectionId = id || autoId;
-  const { api, sectionDisplayMode, crossfadeDurationMs } = useScrollVideo();
-  const [active, setActive] = useState(false);
-  const [leaving, setLeaving] = useState(false);
-  const leaveTimerRef = useRef(0);
-  const elementRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!api) return;
-    const handleEnter = (p: { id: string }) => {
-      if (p.id !== sectionId) return;
-      if (leaveTimerRef.current) {
-        clearTimeout(leaveTimerRef.current);
-        leaveTimerRef.current = 0;
-      }
-      setLeaving(false);
-      setActive(true);
-    };
-    const handleExit = (p: { id: string }) => {
-      if (p.id !== sectionId) return;
-      setActive(false);
-      if (sectionDisplayMode === "crossfade") {
-        setLeaving(true);
-        leaveTimerRef.current = window.setTimeout(() => {
-          setLeaving(false);
-          leaveTimerRef.current = 0;
-        }, crossfadeDurationMs);
-      } else {
-        setLeaving(false);
-      }
-    };
-    api.on("sectionEnter", handleEnter);
-    api.on("sectionExit", handleExit);
-    return () => {
-      if (leaveTimerRef.current) {
-        clearTimeout(leaveTimerRef.current);
-        leaveTimerRef.current = 0;
-      }
-      api.off("sectionEnter", handleEnter);
-      api.off("sectionExit", handleExit);
-    };
-  }, [api, sectionId, sectionDisplayMode, crossfadeDurationMs]);
-
-  const rangeRef = useRef(rest);
-  rangeRef.current = rest;
-  const rangeKey = JSON.stringify(rest);
-  useEffect(() => {
-    if (!api) return;
-    const desc: SectionDescriptor = { id: sectionId, ...rangeRef.current };
-    api.registerSection(desc);
-    return () => api.unregisterSection(sectionId);
-  }, [api, sectionId, rangeKey]);
-
-  useEffect(() => {
-    const el = elementRef.current;
-    if (!api || !el) return;
-    let last = -1;
-    const apply = () => {
-      const p = api.getSectionProgress(sectionId);
-      if (Math.abs(p - last) < 0.0001) return;
-      last = p;
-      el.style.setProperty("--progress", p.toFixed(4));
-    };
-    apply();
-    api.on("update", apply);
-    return () => api.off("update", apply);
-  }, [api, sectionId]);
-
-  const Element: React.ElementType = as;
-  const mergedClass = [className, active ? activeClassName : inactiveClassName]
-    .filter(Boolean)
-    .join(" ");
-
-  const baseStyle: React.CSSProperties = {
-    position: "absolute",
-    inset: 0,
-    transition: "opacity 400ms ease",
-  };
-  if (sectionDisplayMode === "exclusive") {
-    baseStyle.opacity = active ? 1 : 0;
-    baseStyle.visibility = active ? "visible" : "hidden";
-    baseStyle.pointerEvents = active ? "auto" : "none";
-  } else if (sectionDisplayMode === "crossfade") {
-    if (active) {
-      baseStyle.opacity = 1;
-      baseStyle.zIndex = 2;
-      baseStyle.pointerEvents = "auto";
-    } else if (leaving) {
-      baseStyle.opacity = 0;
-      baseStyle.zIndex = 1;
-      baseStyle.pointerEvents = "none";
-    } else {
-      baseStyle.opacity = 0;
-      baseStyle.visibility = "hidden";
-      baseStyle.pointerEvents = "none";
-    }
-    baseStyle.transition = `opacity ${crossfadeDurationMs}ms ease`;
-  } else {
-    baseStyle.opacity = active ? 1 : 0.12;
-    baseStyle.pointerEvents = active ? "auto" : "none";
-  }
-
-  return (
-    <Element
-      ref={elementRef}
-      data-scroll-video-section={sectionId}
-      data-active={active ? "true" : "false"}
-      className={mergedClass}
-      style={baseStyle}
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {children}
-      </div>
-    </Element>
   );
 }

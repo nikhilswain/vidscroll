@@ -11,8 +11,7 @@ import type {
 } from "./types";
 
 const DEFAULT_FPS = 30;
-const DEFAULT_PPF = 12;
-const DEFAULT_BUFFER = 2;
+const AUTO_VH_PER_SECOND = 40;
 const DEFAULT_TAU_MS = 100;
 const TIME_EPSILON_S = 0.001;
 const PROGRESS_EPSILON = 0.0005;
@@ -32,10 +31,9 @@ type VideoWithRVFC = HTMLVideoElement & {
 type ListenerSets = { [K in EngineEvent]: Set<EngineEventHandler<K>> };
 
 export function createEngine(options: EngineOptions): EngineAPI {
-  const pixelsPerFrame = options.pixelsPerFrame ?? DEFAULT_PPF;
-  const bufferFrames = options.bufferFrames ?? DEFAULT_BUFFER;
-  const scrollTarget: Window | HTMLElement = options.scrollTarget || window;
-  const minScrollHeight = options.minScrollHeight ?? 1200;
+  const container = options.container;
+  const stage = options.stage ?? null;
+  const lengthOpt = options.length ?? "auto";
   const easingFn = options.easing || ((t: number) => t);
   const tauMs = options.smoothingTauMs ?? DEFAULT_TAU_MS;
   const warmupEnabled = options.warmup !== false;
@@ -54,7 +52,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let fps = options.fps ?? DEFAULT_FPS;
   let duration = 0;
   let totalFrames = 0;
-  let spacerEl: HTMLDivElement | null = options.spacer ?? null;
 
   let targetProgress = 0;
   let smoothedProgress = 0;
@@ -126,31 +123,35 @@ export function createEngine(options: EngineOptions): EngineAPI {
       next._active = sections.get(id)?._active;
       sections.set(id, next);
     });
-    if (spacerEl) {
-      const scrollLength = Math.max(
-        (totalFrames + bufferFrames) * pixelsPerFrame + window.innerHeight,
-        minScrollHeight
-      );
-      spacerEl.style.height = scrollLength + "px";
-    }
+    container.style.height = `${scrollLengthPx() + stageHeight()}px`;
   }
 
-  function getMaxScrollable() {
-    return (
-      ((spacerEl?.scrollHeight ?? 0) || document.body.scrollHeight) -
-      window.innerHeight
-    );
+  function stageHeight() {
+    return stage?.offsetHeight || window.innerHeight;
+  }
+
+  function scrollLengthPx() {
+    const vh = window.innerHeight / 100;
+    if (lengthOpt === "auto") {
+      const seconds = framesMode ? totalFrames / fps : duration;
+      return Math.max(100, seconds * AUTO_VH_PER_SECOND) * vh;
+    }
+    if (typeof lengthOpt === "number") return Math.max(0, lengthOpt);
+    const match = /^\s*([\d.]+)\s*(px|vh|svh|lvh|dvh)?\s*$/.exec(lengthOpt);
+    if (!match) throw new Error(`Invalid length "${lengthOpt}": use a number of px, "px" or "vh"`);
+    const value = Number(match[1]);
+    return match[2] && match[2] !== "px" ? value * vh : value;
+  }
+
+  function travel() {
+    return Math.max(container.offsetHeight - stageHeight(), 0);
   }
 
   function readScrollIntoTarget() {
-    const maxScrollable = getMaxScrollable();
-    const y =
-      scrollTarget === window
-        ? window.scrollY
-        : (scrollTarget as HTMLElement).scrollTop;
-    targetProgress =
-      maxScrollable > 0 ? Math.min(Math.max(y / maxScrollable, 0), 1) : 0;
-    debugLog("scroll", { y, maxScrollable, targetProgress });
+    const top = container.getBoundingClientRect().top;
+    const distance = travel();
+    targetProgress = distance > 0 ? Math.min(Math.max(-top / distance, 0), 1) : 0;
+    debugLog("scroll", { top, distance, targetProgress });
   }
 
   function updateTargetProgress() {
@@ -387,16 +388,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     start = Math.min(Math.max(start, 0), 1);
     end = Math.min(Math.max(end, 0), 1);
     if (end <= start) end = Math.min(1, start + 0.0001);
-    return { id: desc.id, start, end, mode: desc.mode || "normal", data: desc.data };
-  }
-
-  function attachSpacer(el: HTMLDivElement) {
-    spacerEl = el;
-    if (!el.style.height) {
-      el.style.height =
-        Math.max(minScrollHeight, window.innerHeight * 3) + "px";
-    }
-    recomputeDerived();
+    return { id: desc.id, start, end, data: desc.data };
   }
 
   function onMetadata() {
@@ -422,11 +414,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       videoEl.removeEventListener("seeked", onSeeked);
     }
     window.removeEventListener("resize", onResize);
-    if (scrollTarget instanceof Window) {
-      scrollTarget.removeEventListener("scroll", scheduleScrollRead);
-    } else {
-      scrollTarget.removeEventListener("scroll", scheduleScrollRead);
-    }
+    document.removeEventListener("scroll", scheduleScrollRead, { capture: true });
   }
 
   const api: EngineAPI = {
@@ -476,10 +464,9 @@ export function createEngine(options: EngineOptions): EngineAPI {
       updateSections();
     },
     scrollToProgress(progress: number, opts?: ScrollToOptionsLite) {
-      const top = Math.min(Math.max(progress, 0), 1) * Math.max(getMaxScrollable(), 0);
-      const behavior = opts?.behavior ?? "smooth";
-      if (scrollTarget === window) window.scrollTo({ top, behavior });
-      else (scrollTarget as HTMLElement).scrollTo({ top, behavior });
+      const p = Math.min(Math.max(progress, 0), 1);
+      const top = window.scrollY + container.getBoundingClientRect().top + p * travel();
+      window.scrollTo({ top, behavior: opts?.behavior ?? "smooth" });
     },
     scrollToTime(seconds: number, opts?: ScrollToOptionsLite) {
       if (duration <= 0) return;
@@ -507,16 +494,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
   };
 
   window.addEventListener("resize", onResize);
-  if (scrollTarget instanceof Window) {
-    scrollTarget.addEventListener("scroll", scheduleScrollRead, {
-      passive: true,
-    });
-  } else {
-    scrollTarget.addEventListener("scroll", scheduleScrollRead, {
-      passive: true,
-    });
-  }
-  if (spacerEl) attachSpacer(spacerEl);
+  document.addEventListener("scroll", scheduleScrollRead, { passive: true, capture: true });
+  recomputeDerived();
   if (videoEl) {
     videoEl.addEventListener("loadedmetadata", onMetadata);
     videoEl.addEventListener("seeked", onSeeked);

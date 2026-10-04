@@ -92,7 +92,7 @@ function Readout() {
 
 export function Almanac() {
   return (
-    <ScrollVideo src="/catAnime.mp4" pixelsPerFrame={8} bufferFrames={6} smoothScroll>
+    <ScrollVideo src="/catAnime.mp4" length="2000vh" smoothScroll>
       <div className="almanac-shade" aria-hidden="true" />
       <Readout />
     </ScrollVideo>

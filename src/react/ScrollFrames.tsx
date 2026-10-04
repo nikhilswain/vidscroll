@@ -1,20 +1,21 @@
-import { useEffect, useRef, useState, useMemo } from "react";
-import type { PropsWithChildren } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PropsWithChildren } from "react";
 import { createEngine } from "../core/engine";
 import { createFrameScrubber, resolveFrameUrl } from "../core/frameScrubber";
-import { createSmoothScroll } from "../core/smoothScroll";
+import { acquireSmoothScroll } from "../core/smoothScroll";
 import type { SmoothScrollOptions } from "../core/smoothScroll";
 import type { EngineAPI, EngineOptions } from "../core/types";
 import { ScrollVideoContext } from "./context";
+import { BaseStyles } from "./styles";
 
-interface ScrollFramesProps
-  extends Omit<EngineOptions, "video" | "spacer" | "frames"> {
+export interface ScrollFramesProps
+  extends Omit<EngineOptions, "video" | "frames" | "container" | "stage" | "warmup"> {
   urls: string | string[] | ((index: number) => string);
   count: number;
   fit?: "cover" | "contain";
   smoothScroll?: boolean | SmoothScrollOptions;
-  sectionDisplayMode?: "layered" | "exclusive" | "crossfade";
-  crossfadeDurationMs?: number;
+  className?: string;
+  style?: CSSProperties;
 }
 
 export function ScrollFrames({
@@ -22,90 +23,55 @@ export function ScrollFrames({
   count,
   fit,
   smoothScroll,
+  length,
   fps,
-  pixelsPerFrame,
-  bufferFrames,
   easing,
-  scrollTarget,
-  minScrollHeight,
   smoothingTauMs,
   debug,
   onDebug,
+  className,
+  style,
   children,
-  sectionDisplayMode = "layered",
-  crossfadeDurationMs = 500,
 }: PropsWithChildren<ScrollFramesProps>) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const spacerRef = useRef<HTMLDivElement | null>(null);
   const [api, setApi] = useState<EngineAPI | null>(null);
 
-  const optionsRef = useRef({
-    urls,
-    count,
-    fit,
-    smoothScroll,
-    fps,
-    pixelsPerFrame,
-    bufferFrames,
-    easing,
-    scrollTarget,
-    minScrollHeight,
-    smoothingTauMs,
-    debug,
-    onDebug,
-  });
-  optionsRef.current = {
-    urls,
-    count,
-    fit,
-    smoothScroll,
-    fps,
-    pixelsPerFrame,
-    bufferFrames,
-    easing,
-    scrollTarget,
-    minScrollHeight,
-    smoothingTauMs,
-    debug,
-    onDebug,
-  };
+  const optionsRef = useRef({ urls, fit, smoothScroll, length, fps, easing, smoothingTauMs, debug, onDebug });
+  optionsRef.current = { urls, fit, smoothScroll, length, fps, easing, smoothingTauMs, debug, onDebug };
 
   const smoothOn = !!smoothScroll;
+  const lengthKey = String(length ?? "auto");
 
   useEffect(() => {
     if (!smoothOn) return;
     const o = optionsRef.current.smoothScroll;
-    const instance = createSmoothScroll(
-      o && o !== true ? o : undefined
-    );
-    return () => instance.destroy();
+    return acquireSmoothScroll(o && o !== true ? o : undefined);
   }, [smoothOn]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const spacer = spacerRef.current;
-    if (!canvas || !spacer) return;
+    const container = containerRef.current;
+    const stage = stageRef.current;
+    if (!canvas || !container || !stage) return;
     const o = optionsRef.current;
-    const urlOf =
-      typeof o.urls === "string" ? resolveFrameUrl(o.urls) : o.urls;
     const scrubber = createFrameScrubber({
       canvas,
-      urls: urlOf,
-      count: o.count,
+      urls: typeof o.urls === "string" ? resolveFrameUrl(o.urls) : o.urls,
+      count,
       fit: o.fit,
     });
     const engine = createEngine({
-      spacer,
+      container,
+      stage,
+      length: o.length,
       fps: o.fps,
-      pixelsPerFrame: o.pixelsPerFrame,
-      bufferFrames: o.bufferFrames,
       easing: o.easing,
-      scrollTarget: o.scrollTarget,
-      minScrollHeight: o.minScrollHeight,
       smoothingTauMs: o.smoothingTauMs ?? (smoothOn ? 35 : undefined),
       debug: o.debug,
       onDebug: o.onDebug,
-      frames: { count: o.count, draw: (f) => scrubber.draw(f) },
+      frames: { count, draw: (f) => scrubber.draw(f) },
     });
     scrubber.onProgress(() => engine.notifyReady());
     if (scrubber.isReady()) engine.notifyReady();
@@ -115,25 +81,19 @@ export function ScrollFrames({
       engine.destroy();
       scrubber.destroy();
     };
-  }, [count, smoothOn]);
+  }, [count, smoothOn, lengthKey]);
 
-  const contextValue = useMemo(
-    () => ({ api, sectionDisplayMode, crossfadeDurationMs }),
-    [api, sectionDisplayMode, crossfadeDurationMs]
-  );
+  const contextValue = useMemo(() => ({ api }), [api]);
 
   return (
     <ScrollVideoContext.Provider value={contextValue}>
-      <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
-        <canvas
-          ref={canvasRef}
-          style={{ width: "100%", height: "100%", display: "block" }}
-        />
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-          {children}
+      <BaseStyles />
+      <div ref={containerRef} data-vidscroll="" className={className} style={style}>
+        <div ref={stageRef} data-vidscroll-stage="">
+          <canvas ref={canvasRef} data-vidscroll-media="" />
+          <div data-vidscroll-overlay="">{children}</div>
         </div>
       </div>
-      <div ref={spacerRef} />
     </ScrollVideoContext.Provider>
   );
 }
