@@ -22,8 +22,15 @@ const EXPLANATION: Record<Source, string> = {
 
 function CdnVideo({ src, title, length, credit }: { src: string; title: string; length: string; credit: Credit }) {
   const [source, setSource] = useState<Source | null>(null);
+  const [failed, setFailed] = useState(false);
   return (
-    <ScrollVideo src={src} length={length} smoothScroll onLoad={(info) => setSource(info.source)}>
+    <ScrollVideo
+      src={src}
+      length={length}
+      smoothScroll
+      onLoad={(info) => setSource(info.source)}
+      onError={() => setFailed(true)}
+    >
       <div className="cdn-shade" aria-hidden="true" />
       <Section start={0} end={0.3} className="cdn-title">
         <div>
@@ -33,8 +40,8 @@ function CdnVideo({ src, title, length, credit }: { src: string; title: string; 
       </Section>
       <aside className="cdn-status" aria-live="polite">
         <h3>How this video is served</h3>
-        <p className="cdn-status__source">{source ?? "loading…"}</p>
-        {source && <p>{EXPLANATION[source]}</p>}
+        <p className="cdn-status__source">{failed ? "failed" : (source ?? "loading…")}</p>
+        {failed ? <p>The file couldn't be loaded; the message above says why.</p> : source && <p>{EXPLANATION[source]}</p>}
       </aside>
       <p className="cdn-credit">
         <CreditLine credit={credit} />
