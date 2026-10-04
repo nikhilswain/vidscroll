@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ScrollVideo, Section } from "vidscroll";
 import { TRAIN_CREDIT } from "./credits";
 import { DEMOS } from "./demos";
+import { highlight } from "./highlight";
 import { REPO_URL } from "./TopBar";
 import "./home.css";
 
@@ -39,14 +40,14 @@ export function Home() {
     <main className="home">
       <ScrollVideo
         src="/commute.mp4"
-        length="220vh"
+        length="320vh"
         easing={startPastFadeIn}
         smoothScroll
         loader={false}
         className="home-hero"
       >
         <div className="home-hero__shade" aria-hidden="true" />
-        <Section start={0} end={1} className="home-hero__copy">
+        <Section start={0} end={0.5} className="home-hero__copy">
           <div className="home-hero__text">
             <h1>vidscroll</h1>
             <p>Video that plays as you scroll. Smooth with any MP4, for React.</p>
@@ -54,6 +55,22 @@ export function Home() {
             <a className="home-hero__link" href={REPO_URL} target="_blank" rel="noreferrer">
               Docs and source on GitHub
             </a>
+          </div>
+        </Section>
+        <Section start={0.5} end={1} className="home-hero__copy">
+          <div className="home-start">
+            <h2>Get started</h2>
+            <pre>
+              <code>{highlight(SNIPPET)}</code>
+            </pre>
+            <p>
+              Any MP4 works. Videos with sparse keyframes are re-encoded in the browser on the
+              first visit, or ahead of time with <code>npx vidscroll encode</code>.{" "}
+              <a href={`${REPO_URL}#readme`} target="_blank" rel="noreferrer">
+                Read the guide
+              </a>
+              .
+            </p>
           </div>
         </Section>
         <p className="home-hero__cue" aria-hidden="true">
@@ -76,21 +93,6 @@ export function Home() {
             </li>
           ))}
         </ul>
-      </section>
-
-      <section className="start" aria-labelledby="start-heading">
-        <h2 id="start-heading">Get started</h2>
-        <pre>
-          <code>{SNIPPET}</code>
-        </pre>
-        <p>
-          Any MP4 works. Videos with sparse keyframes are re-encoded in the browser on the first
-          visit, or ahead of time with <code>npx vidscroll encode</code>.{" "}
-          <a href={`${REPO_URL}#readme`} target="_blank" rel="noreferrer">
-            Read the guide
-          </a>
-          .
-        </p>
       </section>
 
       <footer className="home-footer">

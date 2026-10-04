@@ -20,8 +20,8 @@
 .home-hero__text {
   max-width: 34rem;
   margin: 0 0 clamp(48px, 12vh, 120px) clamp(24px, 7vw, 112px);
-  opacity: clamp(0, 1 - var(--progress, 0) * 1.8, 1);
-  transform: translateY(calc(var(--progress, 0) * -8vh));
+  opacity: clamp(0, (1 - var(--progress, 0)) / 0.35, 1);
+  transform: translateY(calc(var(--progress, 0) * -6vh));
 }
 
 .home-hero__text h1 {
@@ -95,15 +95,14 @@
   opacity: calc(0.75 - var(--video-progress, 0) * 3);
 }
 
-.gallery,
-.start {
+.gallery {
   max-width: 72rem;
   margin: 0 auto;
   padding: clamp(64px, 12vh, 128px) clamp(20px, 5vw, 48px) 0;
 }
 
 .gallery h2,
-.start h2 {
+.home-start h2 {
   margin-bottom: 2rem;
   font-family: var(--serif);
   font-style: italic;
@@ -165,34 +164,68 @@
   opacity: 0.72;
 }
 
-.start pre {
+.home-start {
+  width: min(40rem, calc(100vw - 40px));
+  margin: 0 0 clamp(40px, 10vh, 112px) clamp(20px, 7vw, 112px);
+  opacity: clamp(0, var(--progress, 0) / 0.25, 1);
+  transform: translateY(calc((1 - clamp(0, var(--progress, 0) / 0.25, 1)) * 4vh));
+}
+
+.home-start h2 {
+  margin-bottom: 1.25rem;
+}
+
+.home-start pre {
   overflow-x: auto;
-  padding: 24px 28px;
-  border: 1px solid rgb(255 243 227 / 0.12);
+  padding: 22px 26px;
+  border: 1px solid rgb(255 243 227 / 0.16);
   border-radius: 10px;
-  background: rgb(20 10 24 / 0.55);
-  font-size: 0.92rem;
+  background: rgb(20 10 24 / 0.72);
+  backdrop-filter: blur(10px);
+  font-size: clamp(0.78rem, 0.7rem + 0.3vw, 0.92rem);
   line-height: 1.6;
 }
 
-.start pre code,
-.start p code {
+.home-start .tok-keyword {
+  color: #c9a7e8;
+}
+
+.home-start .tok-string {
+  color: var(--peach);
+}
+
+.home-start .tok-tag {
+  color: #7fd8c9;
+}
+
+.home-start .tok-attr {
+  color: #e9c98b;
+}
+
+.home-start .tok-number {
+  color: #f29bb0;
+}
+
+.home-start .tok-punct {
+  color: rgb(255 243 227 / 0.55);
+}
+
+.home-start pre code,
+.home-start p code {
   font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
 }
 
-.start p {
-  max-width: 60ch;
-  margin-top: 1.5rem;
+.home-start p {
+  margin-top: 1.25rem;
   line-height: 1.6;
-  opacity: 0.85;
 }
 
-.start p code {
+.home-start p code {
   color: var(--peach);
   font-size: 0.92em;
 }
 
-.start a,
+.home-start a,
 .home-footer a {
   text-underline-offset: 3px;
 }
@@ -204,6 +237,20 @@
   font-size: 0.85rem;
   line-height: 1.7;
   opacity: 0.65;
+}
+
+@media (max-width: 520px) {
+  .home-start {
+    width: calc(100vw - 40px);
+    margin-left: 20px;
+  }
+
+  .home-start pre {
+    padding: 16px 18px;
+    font-size: 0.76rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }
 
 @media (max-width: 720px) {
