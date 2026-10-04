@@ -11,6 +11,8 @@ text sections that fade in and out along the way.
   of time.
 - Clear errors for things that can't work, like YouTube links or a wrong path.
 
+**[See the demos →](https://vidscroll.ze-ro.workers.dev)**
+
 ```bash
 npm i vidscroll
 ```
@@ -527,7 +529,8 @@ shows an error (and `onError` fires) rather than waiting forever.
 
 ## Demos
 
-`npm run dev` serves them at http://localhost:5173:
+Live at https://vidscroll.ze-ro.workers.dev, or run them locally with
+`npm run dev` (http://localhost:5173):
 
 | Demo | Shows |
 | --- | --- |
