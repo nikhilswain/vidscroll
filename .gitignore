@@ -28,3 +28,4 @@ dist-demo
 *.tgz
 test-results
 playwright-report
+.wrangler
