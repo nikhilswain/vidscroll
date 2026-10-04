@@ -26,7 +26,9 @@ export async function probeWithDemuxer(blob: Blob): Promise<VideoProbe | null> {
     const duration = await track.computeDuration();
     let maxGap = 0;
     let prev: number | null = null;
-    let key = await sink.getKeyPacket(0, { metadataOnly: true });
+    const first = await sink.getFirstPacket({ metadataOnly: true });
+    let key =
+      first && first.type !== "key" ? await sink.getNextKeyPacket(first, { metadataOnly: true }) : first;
     while (key) {
       if (prev != null) maxGap = Math.max(maxGap, key.timestamp - prev);
       prev = key.timestamp;

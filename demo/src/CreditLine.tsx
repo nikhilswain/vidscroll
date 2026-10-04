@@ -15,6 +15,7 @@ export function CreditLine({ credit }: { credit: Credit }) {
           </a>
         </>
       )}
+      {credit.note && <>. {credit.note}</>}
       {credit.host && (
         <>
           . File hosted by{" "}

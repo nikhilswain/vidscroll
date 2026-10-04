@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ScrollVideo, Section } from "vidscroll";
 import { CreditLine } from "./CreditLine";
-import { SINTEL_CREDIT, TRAIN_CREDIT } from "./credits";
+import { SINTEL_CREDIT, SPRING_CREDIT, TRAIN_CREDIT } from "./credits";
 import { DEMOS } from "./demos";
 import { highlight } from "./highlight";
 import { REPO_URL } from "./TopBar";
@@ -99,6 +99,9 @@ export function Home() {
       <footer className="home-footer">
         <p>
           Train animation: <CreditLine credit={TRAIN_CREDIT} />
+        </p>
+        <p>
+          Mountain clip: <CreditLine credit={SPRING_CREDIT} />
         </p>
         <p>
           Snow clip: <CreditLine credit={SINTEL_CREDIT} />

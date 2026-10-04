@@ -1,3 +1,31 @@
+.cdn {
+  background: #0d1015;
+}
+
+.cdn__text {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 26vh 24px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.cdn__text h1,
+.cdn__text h2 {
+  margin-bottom: 1rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.cdn__text code {
+  color: #9fd3ff;
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  font-size: 0.9em;
+}
+
 .cdn-shade {
   position: absolute;
   inset: 0;
@@ -14,7 +42,7 @@
   opacity: clamp(0, (1 - var(--progress, 0)) / 0.4, 1);
 }
 
-.cdn-title h1 {
+.cdn-title h2 {
   font-family: var(--serif);
   font-style: italic;
   font-weight: 400;
@@ -43,7 +71,7 @@
   line-height: 1.55;
 }
 
-.cdn-status h2 {
+.cdn-status h3 {
   font-size: 0.85rem;
   font-weight: 500;
   opacity: 0.7;
@@ -56,13 +84,6 @@
   font-style: italic;
   font-size: 1.6rem;
   line-height: 1.2;
-}
-
-.cdn-status__url {
-  margin-top: 0.6rem;
-  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
-  font-size: 0.8rem;
-  opacity: 0.6;
 }
 
 .cdn-credit {
