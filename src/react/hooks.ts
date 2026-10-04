@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { EngineAPI, EngineStateSnapshot } from "../core/types";
-import { useScrollVideo } from "./context";
+import { useEngine } from "./context";
 
 export function useScrollVideoUpdate(callback: (state: EngineStateSnapshot) => void) {
-  const { api } = useScrollVideo();
+  const api = useEngine();
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
   useEffect(() => {
@@ -45,7 +45,7 @@ const sameState = (a: ScrollVideoState, b: ScrollVideoState) =>
   a.activeSections.join() === b.activeSections.join();
 
 export function useScrollVideoState(): ScrollVideoState {
-  const { api } = useScrollVideo();
+  const api = useEngine();
   const [state, setState] = useState<ScrollVideoState>(IDLE);
   useEffect(() => {
     const sync = (s?: EngineStateSnapshot) => {

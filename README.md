@@ -319,6 +319,7 @@ Inside a section, `--progress` is the section's own progress and
 These hooks work in any component inside a `ScrollVideo`:
 
 ```tsx
+import { useRef } from "react";
 import { useScrollVideoState, useScrollVideoUpdate } from "vidscroll";
 
 function Timecode() {
@@ -367,12 +368,19 @@ with no video decoding:
 <ScrollFrames urls="/frames/frame_{i4}.webp" count={240} />
 ```
 
-## Lower-level API
+## TypeScript
 
-- `loadScrollVideo(src, { optimize, onProgress, signal })`: the load and
-  optimize pipeline, without React.
-- `probeMp4(arrayBuffer)`: keyframe layout of an MP4/MOV file.
-- `createEngine(options)`: the scroll-to-video engine.
+Everything is typed. Besides the component props (`ScrollVideoProps`,
+`SectionProps`, `ScrollFramesProps`), these types are exported:
+
+| Type | What it is |
+| --- | --- |
+| `ScrollVideoApi` | `useScrollVideo().api`: `on`, `off`, `getState`, `isReady`, `scrollToTime`, `scrollToProgress`, `getSectionProgress` |
+| `ScrollVideoSnapshot` | Engine state passed to `useScrollVideoUpdate` and `update` events |
+| `ScrollVideoState` | Return value of `useScrollVideoState` |
+| `LoaderState` | Argument of a `loader` function |
+| `VidscrollError`, `VidscrollErrorCode` | Errors passed to `onError` (`unsupported-url`, `http-error`, `not-a-video`, `unplayable`) |
+| `OptimizeOptions`, `SmoothScrollOptions`, `ScrollToOptions` | Option objects |
 
 ## Guidance
 

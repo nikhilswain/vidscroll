@@ -76,3 +76,8 @@ export interface EngineAPI {
   scrollToProgress(progress: number, opts?: ScrollToOptionsLite): void;
   scrollToTime(seconds: number, opts?: ScrollToOptionsLite): void;
 }
+
+export type ScrollVideoApi = Pick<
+  EngineAPI,
+  "on" | "off" | "getState" | "isReady" | "scrollToTime" | "scrollToProgress" | "getSectionProgress"
+>;

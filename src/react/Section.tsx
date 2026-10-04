@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, ElementType, ReactNode } from "react";
 import type { SectionDescriptor } from "../core/types";
-import { useScrollVideo } from "./context";
+import { useEngine } from "./context";
 
 export interface SectionProps extends Omit<SectionDescriptor, "id"> {
   id?: string;
@@ -25,7 +25,7 @@ export function Section({
 }: SectionProps) {
   const autoId = useId();
   const sectionId = id || autoId;
-  const { api } = useScrollVideo();
+  const api = useEngine();
   const [active, setActive] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
 

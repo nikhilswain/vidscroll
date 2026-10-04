@@ -3,30 +3,19 @@ export type { ScrollVideoProps, LoaderState } from "./react/ScrollVideo";
 export { Section } from "./react/Section";
 export type { SectionProps } from "./react/Section";
 export { ScrollFrames } from "./react/ScrollFrames";
+export type { ScrollFramesProps } from "./react/ScrollFrames";
 export { useScrollVideo } from "./react/context";
 export { useScrollVideoState, useScrollVideoUpdate } from "./react/hooks";
 export type { ScrollVideoState } from "./react/hooks";
-
-export * from "./core/types";
-export { createEngine } from "./core/engine";
 export { easing, type EasingName } from "./core/easing";
-export {
-  loadScrollVideo,
-  type LoadVideoOptions,
-  type LoadedVideo,
-  type LoadPhase,
-  type OptimizeOptions,
-} from "./core/load";
-export { probeMp4, type VideoProbe } from "./core/probe";
 export { VidscrollError, type VidscrollErrorCode } from "./core/source";
-export {
-  createSmoothScroll,
-  type SmoothScrollOptions,
-  type SmoothScrollInstance,
-} from "./core/smoothScroll";
-export {
-  createFrameScrubber,
-  resolveFrameUrl,
-  type FrameScrubber,
-  type FrameScrubberOptions,
-} from "./core/frameScrubber";
+export type {
+  ScrollVideoApi,
+  EngineStateSnapshot as ScrollVideoSnapshot,
+  EngineEventMap as ScrollVideoEvents,
+  ScrollToOptionsLite as ScrollToOptions,
+  SectionDescriptor as SectionRange,
+} from "./core/types";
+export type { OptimizeOptions, LoadedVideo } from "./core/load";
+export type { VideoProbe } from "./core/probe";
+export type { SmoothScrollOptions } from "./core/smoothScroll";
