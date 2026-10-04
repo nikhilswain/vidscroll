@@ -1,4 +1,6 @@
 import type { ComponentType } from "react";
+import { TRAIN_CREDIT } from "./credits";
+import type { Credit } from "./credits";
 import { Almanac } from "./demos/almanac/Almanac";
 import { Basics } from "./demos/basics/Basics";
 import { Commute } from "./demos/commute/Commute";
@@ -9,6 +11,8 @@ export interface Demo {
   title: string;
   description: string;
   source: string;
+  poster: string;
+  credit?: Credit;
   component: ComponentType;
 }
 
@@ -17,8 +21,9 @@ export const DEMOS: Demo[] = [
     slug: "sunset",
     title: "A Small Vigil",
     description:
-      "A short poem over a cat watching the sunset. Lines rise in and dissolve one by one as you scroll, styled with CSS alone using each section's --progress.",
+      "A short poem over a cat watching the sunset. Lines rise in and dissolve one by one as you scroll, styled with nothing but CSS.",
     source: "demo/src/demos/sunset/Sunset.tsx",
+    poster: "/posters/sunset.webp",
     component: Sunset,
   },
   {
@@ -27,6 +32,8 @@ export const DEMOS: Demo[] = [
     description:
       "A daydream in six scenes, framed like a film: an iris opening, subtitles timed in seconds, and chapters you can jump between while the video scrubs along.",
     source: "demo/src/demos/commute/Commute.tsx",
+    poster: "/posters/commute.webp",
+    credit: TRAIN_CREDIT,
     component: Commute,
   },
   {
@@ -35,6 +42,7 @@ export const DEMOS: Demo[] = [
     description:
       "Live readings that follow the sunset: the time, the sun's path, daylight left and the temperature, all computed from scroll position.",
     source: "demo/src/demos/almanac/Almanac.tsx",
+    poster: "/posters/almanac.webp",
     component: Almanac,
   },
   {
@@ -43,6 +51,8 @@ export const DEMOS: Demo[] = [
     description:
       "Two scroll videos placed between ordinary content. Each pins while you scroll through it, then the page carries on.",
     source: "demo/src/demos/basics/Basics.tsx",
+    poster: "/posters/basics.webp",
+    credit: TRAIN_CREDIT,
     component: Basics,
   },
 ];

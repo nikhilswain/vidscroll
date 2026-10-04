@@ -1,26 +1,114 @@
+import { useState } from "react";
+import { ScrollVideo, Section } from "vidscroll";
+import { TRAIN_CREDIT } from "./credits";
 import { DEMOS } from "./demos";
+import { REPO_URL } from "./TopBar";
 import "./home.css";
+
+const INSTALL = "npm i vidscroll";
+
+const startPastFadeIn = (t: number) => 0.04 + 0.96 * t;
+
+const SNIPPET = `import { ScrollVideo, Section } from "vidscroll";
+
+<ScrollVideo src="/hero.mp4" length="400vh">
+  <Section start={0} end={0.5}>
+    <h2>Scroll to play</h2>
+  </Section>
+</ScrollVideo>`;
+
+function InstallCommand() {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await navigator.clipboard.writeText(INSTALL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+  return (
+    <div className="install">
+      <code>{INSTALL}</code>
+      <button type="button" onClick={copy}>
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
 
 export function Home() {
   return (
     <main className="home">
-      <header className="home__header">
-        <h1>vidscroll</h1>
-        <p>
-          Scroll-scrubbed video for React. Each demo is one{" "}
-          <code>&lt;ScrollVideo&gt;</code> with ordinary components and CSS on top.
-        </p>
-      </header>
-      <ul className="home__list">
-        {DEMOS.map((demo) => (
-          <li key={demo.slug}>
-            <a href={`#/${demo.slug}`}>
-              <span className="home__name">{demo.title}</span>
-              <span className="home__desc">{demo.description}</span>
+      <ScrollVideo
+        src="/commute.mp4"
+        length="220vh"
+        easing={startPastFadeIn}
+        smoothScroll
+        loader={false}
+        className="home-hero"
+      >
+        <div className="home-hero__shade" aria-hidden="true" />
+        <Section start={0} end={1} className="home-hero__copy">
+          <div className="home-hero__text">
+            <h1>vidscroll</h1>
+            <p>Video that plays as you scroll. Smooth with any MP4, for React.</p>
+            <InstallCommand />
+            <a className="home-hero__link" href={REPO_URL} target="_blank" rel="noreferrer">
+              Docs and source on GitHub
             </a>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </Section>
+        <p className="home-hero__cue" aria-hidden="true">
+          Scroll to play
+        </p>
+      </ScrollVideo>
+
+      <section className="gallery" aria-labelledby="demos-heading">
+        <h2 id="demos-heading">Demos</h2>
+        <ul className="gallery__grid">
+          {DEMOS.map((demo) => (
+            <li key={demo.slug}>
+              <a className="demo-card" href={`#/${demo.slug}`}>
+                <div className="demo-card__poster">
+                  <img src={demo.poster} alt="" loading="lazy" width={960} height={540} />
+                </div>
+                <h3>{demo.title}</h3>
+                <p>{demo.description}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="start" aria-labelledby="start-heading">
+        <h2 id="start-heading">Get started</h2>
+        <pre>
+          <code>{SNIPPET}</code>
+        </pre>
+        <p>
+          Any MP4 works. Videos with sparse keyframes are re-encoded in the browser on the first
+          visit, or ahead of time with <code>npx vidscroll encode</code>.{" "}
+          <a href={`${REPO_URL}#readme`} target="_blank" rel="noreferrer">
+            Read the guide
+          </a>
+          .
+        </p>
+      </section>
+
+      <footer className="home-footer">
+        <p>
+          Train animation:{" "}
+          <a href={TRAIN_CREDIT.href} target="_blank" rel="noreferrer">
+            “{TRAIN_CREDIT.work}”
+          </a>{" "}
+          by {TRAIN_CREDIT.author}.
+        </p>
+        <p>
+          MIT licensed.{" "}
+          <a href={REPO_URL} target="_blank" rel="noreferrer">
+            Source on GitHub
+          </a>
+          .
+        </p>
+      </footer>
     </main>
   );
 }

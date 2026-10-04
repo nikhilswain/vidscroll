@@ -552,6 +552,12 @@ The demo imports the library from `src/` directly. Browser tests need Google
 Chrome installed plus `npx playwright install firefox webkit`; they build the
 demo and serve it on port 4173.
 
+## Credits
+
+The train animation used in the demos is
+["30 second animation assignment"](https://www.youtube.com/watch?v=_Td7JjCTfyc)
+by [roenais](https://www.youtube.com/@roenais).
+
 ## License
 
 MIT

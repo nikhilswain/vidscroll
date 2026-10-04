@@ -125,6 +125,24 @@
   color: var(--commute-teal);
 }
 
+.commute-credit {
+  position: absolute;
+  left: clamp(16px, 3vw, 40px);
+  bottom: calc(var(--commute-bar) / 2 - 0.6em);
+  color: rgb(255 255 255 / 0.6);
+  font-size: 0.75rem;
+  pointer-events: auto;
+}
+
+.commute-credit a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+
+.commute-credit a:hover {
+  color: #fff;
+}
+
 .commute-loader {
   position: absolute;
   inset: 0;

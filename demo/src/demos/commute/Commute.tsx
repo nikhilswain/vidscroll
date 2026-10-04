@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 import { ScrollVideo, Section, useScrollVideo, useScrollVideoUpdate } from "vidscroll";
+import { TRAIN_CREDIT } from "../../credits";
 import "./commute.css";
 
 const CHAPTERS = [
@@ -100,6 +101,14 @@ export function Commute() {
       ))}
 
       <ChapterRail />
+
+      <p className="commute-credit">
+        Animation:{" "}
+        <a href={TRAIN_CREDIT.href} target="_blank" rel="noreferrer">
+          “{TRAIN_CREDIT.work}”
+        </a>{" "}
+        by {TRAIN_CREDIT.author}
+      </p>
     </ScrollVideo>
   );
 }

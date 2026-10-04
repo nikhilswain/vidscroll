@@ -1,4 +1,5 @@
 import { ScrollVideo, Section } from "vidscroll";
+import { TRAIN_CREDIT } from "../../credits";
 import "./basics.css";
 
 export function Basics() {
@@ -39,7 +40,13 @@ export function Basics() {
       </ScrollVideo>
 
       <footer className="basics__text">
-        <p>The end of the page.</p>
+        <p>
+          The end of the page. Train animation:{" "}
+          <a href={TRAIN_CREDIT.href} target="_blank" rel="noreferrer">
+            “{TRAIN_CREDIT.work}”
+          </a>{" "}
+          by {TRAIN_CREDIT.author}.
+        </p>
       </footer>
     </main>
   );
