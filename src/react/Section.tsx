@@ -47,6 +47,7 @@ export function Section({
   useEffect(() => {
     if (!api) return;
     api.registerSection({ id: sectionId, ...rangeRef.current });
+    setActive(api.getState().activeSections.includes(sectionId));
     return () => api.unregisterSection(sectionId);
   }, [api, sectionId, rangeKey]);
 

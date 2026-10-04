@@ -344,6 +344,15 @@ Scrubbing works in all modern browsers. In-browser re-encoding needs
 WebCodecs: Chrome/Edge 94+, Safari 16.4+, Firefox 130+. Elsewhere, pre-encode
 with the CLI.
 
+The automated tests run the demos in Chrome, Firefox and WebKit. The WebKit
+they use (Playwright's Windows build) has no WebCodecs, so there it only runs
+pre-encoded videos, plus a check that an unplayable video shows an error
+instead of loading forever. Real Safari and iOS haven't been tested yet.
+
+If a browser can't play the downloaded copy of a video, vidscroll streams
+the original URL instead. If it can't play or seek that either, the loader
+shows an error (and `onError` fires) rather than waiting forever.
+
 ## Demos
 
 `npm run dev` serves them at http://localhost:5173:
@@ -363,9 +372,13 @@ npm run dev         # demos (demo/) at http://localhost:5173
 npm run build       # library → dist/
 npm run typecheck
 npm run lint
+npm test            # unit tests (Vitest)
+npm run test:e2e    # browser tests (Playwright) in Chrome, Firefox and WebKit
 ```
 
-The demo imports the library from `src/` directly.
+The demo imports the library from `src/` directly. Browser tests need Google
+Chrome installed plus `npx playwright install firefox webkit`; they build the
+demo and serve it on port 4173.
 
 ## License
 

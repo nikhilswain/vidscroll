@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
 import { createEngine } from "../core/engine";
 import { loadScrollVideo } from "../core/load";
-import { checkSourceUrl } from "../core/source";
+import { VidscrollError, checkSourceUrl, warnOnce } from "../core/source";
 import type { LoadedVideo, OptimizeOptions } from "../core/load";
 import { acquireSmoothScroll } from "../core/smoothScroll";
 import type { SmoothScrollOptions } from "../core/smoothScroll";
@@ -99,6 +99,7 @@ export function ScrollVideo({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [api, setApi] = useState<EngineAPI | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const releaseRef = useRef<(() => void) | null>(null);
   const [loading, setLoading] = useState<LoaderState | null>({
     phase: "download",
     progress: 0,
@@ -148,6 +149,7 @@ export function ScrollVideo({
 
     const finish = (result: LoadedVideo) => {
       loaded = result;
+      releaseRef.current = () => result.release();
       setVideoUrl(result.url);
       setLoading({ phase: "preparing", progress: 0 });
       optionsRef.current.onLoad?.({ source: result.source, probe: result.probe });
@@ -210,12 +212,14 @@ export function ScrollVideo({
 
   useEffect(() => {
     if (!api) return;
+    const notFailed = (next: LoaderState | null) => (current: LoaderState | null) =>
+      current?.phase === "error" ? current : next;
     const onWarmup = (p: { value: number }) =>
-      setLoading({ phase: "preparing", progress: p.value });
-    const onReady = () => setLoading(null);
+      setLoading(notFailed({ phase: "preparing", progress: p.value }));
+    const onReady = () => setLoading(notFailed(null));
     api.on("warmup", onWarmup);
     api.on("ready", onReady);
-    if (api.isReady()) setLoading(null);
+    if (api.isReady()) setLoading(notFailed(null));
     return () => {
       api.off("warmup", onWarmup);
       api.off("ready", onReady);
@@ -223,6 +227,32 @@ export function ScrollVideo({
   }, [api]);
 
   const contextValue = useMemo(() => ({ api }), [api]);
+
+  const failPlayback = (reason: string) => {
+    if (!videoUrl) return;
+    if (videoUrl !== src) {
+      warnOnce(`[vidscroll] This browser couldn't use the downloaded copy of "${src}" (${reason}); streaming it instead.`);
+      releaseRef.current?.();
+      releaseRef.current = null;
+      setVideoUrl(src);
+      return;
+    }
+    const err = new VidscrollError(
+      "unplayable",
+      `[vidscroll] This browser can't scrub "${src}" (${reason}). Preparing it with \`npx vidscroll encode\` produces a standard MP4 that plays everywhere.`
+    );
+    console.error(err);
+    setLoading({ phase: "error", progress: 0, error: err });
+    optionsRef.current.onError?.(err);
+  };
+
+  const onVideoError = () =>
+    failPlayback(videoRef.current?.error?.message || "unsupported format or codec");
+
+  const onVideoMetadata = () => {
+    const duration = videoRef.current?.duration ?? 0;
+    if (!(duration > 0 && Number.isFinite(duration))) failPlayback("its duration is unknown, so it can't seek");
+  };
 
   const previewSrc = useMemo(() => {
     try {
@@ -246,6 +276,8 @@ export function ScrollVideo({
             data-fit={fit}
             src={videoUrl ?? undefined}
             poster={poster || undefined}
+            onError={onVideoError}
+            onLoadedMetadata={onVideoMetadata}
             muted
             playsInline
             preload="auto"

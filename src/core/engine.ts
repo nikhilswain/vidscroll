@@ -20,6 +20,8 @@ const FRAME_WAIT_TIMEOUT_MS = 300;
 const PRIME_MAX_SAMPLES = 6;
 const PRIME_MIN_SAMPLES = 3;
 const PRIME_TIMEOUT_MS = 600;
+const WARMUP_STEP_TIMEOUT_MS = 1000;
+const SEEK_STALL_MS = 1000;
 
 type RVFCMeta = { mediaTime: number; presentedFrames: number };
 type VideoWithRVFC = HTMLVideoElement & {
@@ -62,6 +64,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let scrollRafPending = false;
 
   let seekInFlight = false;
+  let requestedTime = NaN;
+  let requestedAt = 0;
   let frameWaitActive = false;
   let frameWaitTimeoutId = 0;
 
@@ -76,6 +80,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let warming = false;
   let warmupIndex = 0;
   let warmupTotal = 0;
+  let warmupTimeoutId = 0;
 
   let destroyed = false;
 
@@ -227,20 +232,20 @@ export function createEngine(options: EngineOptions): EngineAPI {
     updateSections();
     emit("update", { ...state });
 
-    if (
-      !priming &&
-      !warming &&
-      !seekInFlight &&
-      !videoEl!.seeking &&
-      Math.abs(videoEl!.currentTime - targetTime) > TIME_EPSILON_S
-    ) {
+    const seeking = videoEl!.seeking;
+    const stalled = seeking && now - requestedAt > SEEK_STALL_MS;
+    const newTarget = !(Math.abs(requestedTime - targetTime) <= TIME_EPSILON_S);
+    if (!priming && !warming && !seekInFlight && (stalled || (!seeking && newTarget))) {
       seekInFlight = true;
+      requestedTime = targetTime;
+      requestedAt = now;
       videoEl!.currentTime = targetTime;
       armFrameWait();
-      debugLog("seek", { targetTime, current: videoEl!.currentTime });
+      debugLog("seek", { targetTime, stalled });
     }
 
-    const settled = smoothedProgress === targetProgress && !seekInFlight;
+    const settled =
+      smoothedProgress === targetProgress && !seekInFlight && !seeking && !newTarget;
     if (settled) {
       lastTickTime = 0;
       return;
@@ -323,7 +328,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
   function beginWarmup() {
     if (destroyed) return;
-    if (!warmupEnabled || !videoEl) return emitReadyNow();
+    if (!warmupEnabled || !videoEl || !(duration > 0)) return emitReadyNow();
     warming = true;
     warmupIndex = 0;
     warmupTotal =
@@ -335,9 +340,14 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
   function stepWarmup() {
     if (destroyed || !videoEl) return;
+    clearTimeout(warmupTimeoutId);
     if (warmupIndex >= warmupTotal) return finishWarmup();
     emit("warmup", { value: warmupIndex / warmupTotal });
     videoEl.currentTime = (duration * (warmupIndex + 0.5)) / warmupTotal;
+    warmupTimeoutId = window.setTimeout(() => {
+      warmupIndex++;
+      stepWarmup();
+    }, WARMUP_STEP_TIMEOUT_MS);
   }
 
   function finishWarmup() {
@@ -350,6 +360,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
   function emitReadyNow() {
     if (destroyed || readyEmitted) return;
     readyEmitted = true;
+    requestedTime = NaN;
     emit("ready", { ...state });
     lastTickTime = 0;
     requestTick();
@@ -424,6 +435,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       if (tickRafId) cancelAnimationFrame(tickRafId);
       if (frameWaitTimeoutId) clearTimeout(frameWaitTimeoutId);
       if (primeTimeoutId) clearTimeout(primeTimeoutId);
+      clearTimeout(warmupTimeoutId);
       priming = false;
       removeListeners();
       if (videoEl) {

@@ -26,3 +26,5 @@ dist-ssr
 # Build output
 dist-demo
 *.tgz
+test-results
+playwright-report

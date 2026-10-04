@@ -1,7 +1,8 @@
 export type VidscrollErrorCode =
   | "unsupported-url"
   | "http-error"
-  | "not-a-video";
+  | "not-a-video"
+  | "unplayable";
 
 export class VidscrollError extends Error {
   readonly code: VidscrollErrorCode;
