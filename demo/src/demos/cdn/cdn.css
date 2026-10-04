@@ -1,0 +1,85 @@
+.cdn-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgb(10 12 16 / 0.75), transparent 45%);
+}
+
+.cdn-title {
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.55);
+}
+
+.cdn-title > div {
+  opacity: clamp(0, (1 - var(--progress, 0)) / 0.4, 1);
+}
+
+.cdn-title h1 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(3.5rem, 2rem + 7vw, 8rem);
+  line-height: 1;
+}
+
+.cdn-title p {
+  margin-top: 0.75rem;
+  font-size: 1.05rem;
+  opacity: 0.85;
+}
+
+.cdn-status {
+  position: absolute;
+  left: clamp(16px, 4vw, 48px);
+  bottom: clamp(56px, 10vh, 96px);
+  width: min(26rem, calc(100vw - 32px));
+  padding: 18px 20px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 12px;
+  background: rgb(10 12 16 / 0.62);
+  backdrop-filter: blur(10px);
+  color: #f1f3f6;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.cdn-status h2 {
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.cdn-status__source {
+  margin: 0.2rem 0 0.5rem;
+  color: #9fd3ff;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.cdn-status__url {
+  margin-top: 0.6rem;
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.cdn-credit {
+  position: absolute;
+  left: clamp(16px, 4vw, 48px);
+  right: clamp(16px, 4vw, 48px);
+  bottom: 18px;
+  color: rgb(255 255 255 / 0.65);
+  font-size: 0.75rem;
+  pointer-events: auto;
+}
+
+.cdn-credit a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+
+.cdn-credit a:hover {
+  color: #fff;
+}

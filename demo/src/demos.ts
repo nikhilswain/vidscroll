@@ -1,8 +1,9 @@
 import type { ComponentType } from "react";
-import { TRAIN_CREDIT } from "./credits";
+import { SINTEL_CREDIT, TRAIN_CREDIT } from "./credits";
 import type { Credit } from "./credits";
 import { Almanac } from "./demos/almanac/Almanac";
 import { Basics } from "./demos/basics/Basics";
+import { Cdn } from "./demos/cdn/Cdn";
 import { Commute } from "./demos/commute/Commute";
 import { Sunset } from "./demos/sunset/Sunset";
 
@@ -44,6 +45,16 @@ export const DEMOS: Demo[] = [
     source: "demo/src/demos/almanac/Almanac.tsx",
     poster: "/posters/almanac.webp",
     component: Almanac,
+  },
+  {
+    slug: "cdn",
+    title: "From a CDN",
+    description:
+      "A clip loaded straight from another website, with a live readout of how the library ended up serving it.",
+    source: "demo/src/demos/cdn/Cdn.tsx",
+    poster: "/posters/cdn.webp",
+    credit: SINTEL_CREDIT,
+    component: Cdn,
   },
   {
     slug: "basics",
