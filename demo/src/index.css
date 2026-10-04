@@ -1,49 +1,114 @@
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+}
+
+:root {
+  --cream: #fff3e3;
+  --plum: #2b1630;
+  --lilac: #8c6e9b;
+  --peach: #f6b98e;
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --sans: "Instrument Sans", system-ui, sans-serif;
 }
 
 html {
-  scroll-behavior: auto; /* Disable smooth scroll for precise video control */
+  scroll-behavior: auto;
 }
 
 body {
-  margin: 0;
-  background: black;
+  background: #000;
+  color: var(--cream);
+  font-family: var(--sans);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Section panels occupying full viewport to create scroll narrative */
-.panel {
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--peach);
+  outline-offset: 3px;
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: white;
-  font-family: system-ui, sans-serif;
-  padding: 2rem;
-  pointer-events: none; /* visuals only overlaying video */
-  mix-blend-mode: normal;
+  justify-content: space-between;
+  gap: 16px;
+  height: 56px;
+  padding: 0 clamp(16px, 3vw, 32px);
+  background: linear-gradient(rgb(0 0 0 / 0.5), transparent);
+  color: #fff;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.4);
 }
 
-.panel h1 {
-  font-size: clamp(2.5rem, 8vw, 6rem);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  pointer-events: auto;
+.topbar a {
+  text-decoration: none;
 }
 
-/* Optional accent per section (demo) */
-.panel:nth-of-type(1) h1 {
-  color: #ffdd55;
+.topbar a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-.panel:nth-of-type(2) h1 {
-  color: #55d9ff;
+
+.topbar__crumbs {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
 }
-.panel:nth-of-type(3) h1 {
-  color: #ff7ad9;
+
+.topbar__home {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.35rem;
+}
+
+.topbar__sep {
+  opacity: 0.5;
+}
+
+.topbar__title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+.topbar__links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.topbar__github {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.topbar__github:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+@media (max-width: 520px) {
+  .topbar__sep,
+  .topbar__title {
+    display: none;
+  }
 }

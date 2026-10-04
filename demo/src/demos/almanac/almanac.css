@@ -1,0 +1,123 @@
+:root {
+  --almanac-figures: "Fraunces", Georgia, serif;
+}
+
+.almanac-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(43 22 48 / 0.72), rgb(43 22 48 / 0.35) 34%, transparent 58%);
+}
+
+.almanac {
+  position: absolute;
+  top: 50%;
+  left: clamp(20px, 6vw, 96px);
+  transform: translateY(-50%);
+  width: min(300px, 80vw);
+  color: var(--cream);
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 12px rgb(43 22 48 / 0.5);
+}
+
+.almanac__heading {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.almanac__clock {
+  margin-top: 0.25rem;
+  font-family: var(--almanac-figures);
+  font-weight: 300;
+  font-size: clamp(4rem, 3rem + 4vw, 7rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.almanac__phase {
+  margin-top: 0.4rem;
+  color: var(--peach);
+  font-family: var(--almanac-figures);
+  font-style: italic;
+  font-size: 1.35rem;
+}
+
+.almanac__sky {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 1.5rem 0 1.25rem;
+  overflow: visible;
+}
+
+.almanac__path,
+.almanac__trail {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.almanac__path {
+  stroke: rgb(255 243 227 / 0.25);
+  stroke-dasharray: 2 5;
+}
+
+.almanac__trail {
+  stroke: rgb(255 243 227 / 0.8);
+}
+
+.almanac__horizon {
+  stroke: rgb(255 243 227 / 0.45);
+  stroke-width: 1;
+}
+
+.almanac__sun {
+  fill: var(--peach);
+  filter: drop-shadow(0 0 6px rgb(246 185 142 / 0.9));
+}
+
+.almanac__stats {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.almanac__stats div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgb(255 243 227 / 0.18);
+}
+
+.almanac__stats dt {
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.almanac__stats dd {
+  font-family: var(--almanac-figures);
+  font-size: 1.35rem;
+}
+
+@media (max-width: 720px) {
+  .almanac-shade {
+    background: linear-gradient(0deg, rgb(43 22 48 / 0.8), rgb(43 22 48 / 0.35) 45%, transparent 70%);
+  }
+
+  .almanac {
+    top: auto;
+    bottom: 24px;
+    transform: none;
+  }
+
+  .almanac__clock {
+    font-size: 3.5rem;
+  }
+
+  .almanac__sky {
+    margin: 0.75rem 0;
+    max-height: 64px;
+  }
+}

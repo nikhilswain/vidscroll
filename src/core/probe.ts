@@ -1,16 +1,14 @@
 export interface VideoProbe {
-  /** Video track duration in seconds. */
   duration: number;
   width: number;
   height: number;
   frameCount: number;
-  /** Largest gap between consecutive keyframes (or last keyframe → end), seconds. */
   maxKeyframeGap: number;
 }
 
 interface Box {
   type: string;
-  start: number; // payload start
+  start: number;
   end: number;
 }
 
@@ -20,12 +18,11 @@ interface TrackInfo {
   width: number;
   height: number;
   timescale: number;
-  sampleDeltas: number[]; // per-sample durations from stts (regular MP4)
-  syncSamples: Set<number> | null; // 1-based; null = every sample is a keyframe
+  sampleDeltas: number[];
+  syncSamples: Set<number> | null;
   trexDuration: number;
   trexFlags: number;
 }
-
 
 function readBoxes(view: DataView, start: number, end: number): Box[] {
   const boxes: Box[] = [];
@@ -45,7 +42,7 @@ function readBoxes(view: DataView, start: number, end: number): Box[] {
     } else if (size === 0) {
       size = end - o;
     }
-    if (size < header || o + size > end) break; // truncated or corrupt
+    if (size < header || o + size > end) break;
     boxes.push({ type, start: o + header, end: o + size });
     o += size;
   }
@@ -112,14 +109,8 @@ function parseTrak(view: DataView, trak: Box): TrackInfo | null {
   };
 }
 
-/** sample_is_non_sync_sample bit of ISO BMFF sample flags. */
 const isSyncFlags = (flags: number) => ((flags >>> 16) & 1) === 0;
 
-/**
- * Read keyframe placement from an MP4/MOV file (regular or fragmented)
- * without decoding anything. Returns null for other containers or files it
- * can't make sense of — callers fall back to a full demuxer.
- */
 export function probeMp4(buffer: ArrayBuffer): VideoProbe | null {
   try {
     const view = new DataView(buffer);
@@ -145,7 +136,6 @@ export function probeMp4(buffer: ArrayBuffer): VideoProbe | null {
       }
     }
 
-    // Keyframe decode times, in track timescale units.
     const keyTimes: number[] = [];
     let time = 0;
     let frameCount = 0;
@@ -156,7 +146,6 @@ export function probeMp4(buffer: ArrayBuffer): VideoProbe | null {
       frameCount++;
     });
 
-    // Fragmented MP4: samples live in moof/traf/trun boxes.
     for (const moof of top) {
       if (moof.type !== "moof") continue;
       for (const traf of readBoxes(view, moof.start, moof.end)) {
@@ -166,15 +155,15 @@ export function probeMp4(buffer: ArrayBuffer): VideoProbe | null {
         if (!tfhd || view.getUint32(tfhd.start + 4) !== video.id) continue;
         const tfFlags = view.getUint32(tfhd.start) & 0xffffff;
         let p = tfhd.start + 8;
-        if (tfFlags & 0x1) p += 8; // base_data_offset
-        if (tfFlags & 0x2) p += 4; // sample_description_index
+        if (tfFlags & 0x1) p += 8;
+        if (tfFlags & 0x2) p += 4;
         let defDuration = video.trexDuration;
         let defFlags = video.trexFlags;
         if (tfFlags & 0x8) {
           defDuration = view.getUint32(p);
           p += 4;
         }
-        if (tfFlags & 0x10) p += 4; // default_sample_size
+        if (tfFlags & 0x10) p += 4;
         if (tfFlags & 0x20) defFlags = view.getUint32(p);
 
         const tfdt = kids.find((b) => b.type === "tfdt");
@@ -190,7 +179,7 @@ export function probeMp4(buffer: ArrayBuffer): VideoProbe | null {
           const flags = view.getUint32(trun.start) & 0xffffff;
           const count = view.getUint32(trun.start + 4);
           let r = trun.start + 8;
-          if (flags & 0x1) r += 4; // data_offset
+          if (flags & 0x1) r += 4;
           let firstFlags: number | null = null;
           if (flags & 0x4) {
             firstFlags = view.getUint32(r);
@@ -203,12 +192,12 @@ export function probeMp4(buffer: ArrayBuffer): VideoProbe | null {
               duration = view.getUint32(r);
               r += 4;
             }
-            if (flags & 0x200) r += 4; // size
+            if (flags & 0x200) r += 4;
             if (flags & 0x400) {
               sampleFlags = view.getUint32(r);
               r += 4;
             }
-            if (flags & 0x800) r += 4; // composition offset
+            if (flags & 0x800) r += 4;
             if (i === 0 && firstFlags != null) sampleFlags = firstFlags;
             if (isSyncFlags(sampleFlags)) keyTimes.push(time);
             time += duration;

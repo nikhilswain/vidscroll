@@ -10,40 +10,21 @@ import { ScrollVideoContext, useScrollVideo } from "./context";
 
 export interface LoaderState {
   phase: "download" | "optimize" | "preparing" | "error";
-  /** 0..1 within the current phase. */
   progress: number;
   error?: Error;
 }
 
 export interface ScrollVideoProps extends Omit<EngineOptions, "video" | "spacer"> {
-  /**
-   * URL of a video file (.mp4/.webm/.mov) — not a YouTube/Vimeo page.
-   * Cross-origin files need CORS headers to be optimized.
-   */
   src: string;
-  /**
-   * Re-encode videos whose keyframes are too far apart for smooth scrubbing,
-   * in the browser, on first load (cached afterwards). Default true.
-   * Pre-encoding with `npx vidscroll encode` avoids the wait entirely.
-   */
   optimize?: boolean | OptimizeOptions;
-  /** Lerped wheel scrolling for buttery input. */
   smoothScroll?: boolean | SmoothScrollOptions;
-  /**
-   * Download the whole file before scrolling is enabled (default true).
-   * `false` streams the URL directly and skips optimization.
-   */
   fullPreload?: boolean;
-  /**
-   * Loading overlay: `false` disables it, a node replaces it, a function
-   * renders it from the current phase/progress.
-   */
   loader?: ReactNode | false | ((state: LoaderState) => ReactNode);
-  /** Called once the video is loaded, with how it's being served. */
   onLoad?: (info: Pick<LoadedVideo, "source" | "probe">) => void;
   onError?: (error: Error) => void;
+  fit?: "cover" | "contain";
   sectionDisplayMode?: "layered" | "exclusive" | "crossfade";
-  crossfadeDurationMs?: number; // used in crossfade mode
+  crossfadeDurationMs?: number;
 }
 
 const PHASE_LABEL: Record<Exclude<LoaderState["phase"], "error">, string> = {
@@ -109,6 +90,7 @@ export function ScrollVideo({
   smoothScroll,
   fullPreload = true,
   loader,
+  fit = "cover",
   onLoad,
   onError,
   debug,
@@ -126,8 +108,6 @@ export function ScrollVideo({
     progress: 0,
   });
 
-  // Options live in a ref so inline objects/callbacks don't restart loading
-  // or tear the engine down every render.
   const optionsRef = useRef({
     fps,
     pixelsPerFrame,
@@ -163,7 +143,6 @@ export function ScrollVideo({
 
   const smoothOn = !!smoothScroll;
 
-  // Lerped wheel scrolling; the engine just reads the animated scrollY.
   useEffect(() => {
     if (!smoothOn) return;
     const o = optionsRef.current.smoothScroll;
@@ -171,7 +150,6 @@ export function ScrollVideo({
     return () => instance.destroy();
   }, [smoothOn]);
 
-  // Load: download → (re-encode if needed) → hand the URL to the <video>.
   useEffect(() => {
     const controller = new AbortController();
     let loaded: LoadedVideo | null = null;
@@ -241,8 +219,6 @@ export function ScrollVideo({
     };
   }, [videoUrl, smoothOn]);
 
-  // Loader progress for the preparing phase (decoder warm-up), plus a safety
-  // sync in case "ready" fired before this subscription existed.
   useEffect(() => {
     if (!api) return;
     const onWarmup = (p: { value: number }) =>
@@ -257,7 +233,6 @@ export function ScrollVideo({
     };
   }, [api]);
 
-  // Lock scrolling while loading so users can't scrub a cold video.
   const locked = loading != null && loading.phase !== "error";
   useEffect(() => {
     if (!locked) return;
@@ -284,7 +259,7 @@ export function ScrollVideo({
           style={{
             width: "100%",
             height: "100%",
-            objectFit: "cover",
+            objectFit: fit,
           }}
         />
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
@@ -317,7 +292,7 @@ export function ScrollVideo({
 }
 
 interface SectionProps extends Omit<SectionDescriptor, "id"> {
-  id?: string; // allow auto id
+  id?: string;
   className?: string;
   as?: React.ElementType;
   children?: React.ReactNode;
@@ -340,10 +315,8 @@ export function Section({
   const [active, setActive] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const leaveTimerRef = useRef(0);
+  const elementRef = useRef<HTMLElement | null>(null);
 
-  // Subscribe before registering (effects run in order): registering emits
-  // sectionEnter right away for a section that starts active.
-  // Sections only re-render when they flip active state, not on every frame.
   useEffect(() => {
     if (!api) return;
     const handleEnter = (p: { id: string }) => {
@@ -380,22 +353,36 @@ export function Section({
     };
   }, [api, sectionId, sectionDisplayMode, crossfadeDurationMs]);
 
-  // Register / unregister
+  const rangeRef = useRef(rest);
+  rangeRef.current = rest;
+  const rangeKey = JSON.stringify(rest);
   useEffect(() => {
     if (!api) return;
-    const desc: SectionDescriptor = { id: sectionId, ...rest };
+    const desc: SectionDescriptor = { id: sectionId, ...rangeRef.current };
     api.registerSection(desc);
     return () => api.unregisterSection(sectionId);
-    // Spread of rest stable enough for typical usage; if user passes new object each render it will re-register.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, sectionId, JSON.stringify(rest)]);
+  }, [api, sectionId, rangeKey]);
+
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!api || !el) return;
+    let last = -1;
+    const apply = () => {
+      const p = api.getSectionProgress(sectionId);
+      if (Math.abs(p - last) < 0.0001) return;
+      last = p;
+      el.style.setProperty("--progress", p.toFixed(4));
+    };
+    apply();
+    api.on("update", apply);
+    return () => api.off("update", apply);
+  }, [api, sectionId]);
 
   const Element: React.ElementType = as;
   const mergedClass = [className, active ? activeClassName : inactiveClassName]
     .filter(Boolean)
     .join(" ");
 
-  // Visibility logic based on mode
   const baseStyle: React.CSSProperties = {
     position: "absolute",
     inset: 0,
@@ -421,13 +408,13 @@ export function Section({
     }
     baseStyle.transition = `opacity ${crossfadeDurationMs}ms ease`;
   } else {
-    // layered
     baseStyle.opacity = active ? 1 : 0.12;
     baseStyle.pointerEvents = active ? "auto" : "none";
   }
 
   return (
     <Element
+      ref={elementRef}
       data-scroll-video-section={sectionId}
       data-active={active ? "true" : "false"}
       className={mergedClass}

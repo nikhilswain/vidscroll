@@ -8,8 +8,6 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   target: "es2020",
-  // Hooks and effects: mark the bundle as a client module for React Server
-  // Components frameworks (Next.js app router).
   banner: { js: '"use client";' },
   external: ["react", "mediabunny"],
 });

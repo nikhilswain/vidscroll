@@ -1,46 +1,37 @@
-import { ScrollVideo, Section } from "vidscroll";
-import "./index.css";
+import { useEffect, useState } from "react";
+import { DEMOS } from "./demos";
+import { Home } from "./Home";
+import { TopBar } from "./TopBar";
 
-function App() {
+const slugFromHash = () => location.hash.replace(/^#\/?/, "");
+
+export default function App() {
+  const [slug, setSlug] = useState(slugFromHash);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setSlug(slugFromHash());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  const demo = DEMOS.find((d) => d.slug === slug);
+  if (!demo) {
+    return (
+      <>
+        <TopBar />
+        <Home />
+      </>
+    );
+  }
+
+  const Demo = demo.component;
   return (
-    <ScrollVideo
-      src="/catAnime.mp4"
-      pixelsPerFrame={10}
-      bufferFrames={6}
-      fps={30}
-      smoothScroll
-      sectionDisplayMode="crossfade"
-      crossfadeDurationMs={600}
-    >
-      <Section
-        id="intro"
-        start={0}
-        end={0.33}
-        className="panel"
-        activeClassName="active"
-      >
-        <h1>Intro</h1>
-      </Section>
-      <Section
-        id="mid"
-        fromTime={20}
-        toTime={40}
-        className="panel"
-        activeClassName="active"
-      >
-        <h1>Middle</h1>
-      </Section>
-      <Section
-        id="outro"
-        start={0.66}
-        end={1}
-        className="panel"
-        activeClassName="active"
-      >
-        <h1>Outro</h1>
-      </Section>
-    </ScrollVideo>
+    <>
+      <TopBar demo={demo} />
+      <Demo key={demo.slug} />
+    </>
   );
 }
-
-export default App;

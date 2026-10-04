@@ -1,0 +1,190 @@
+.scene {
+  color: var(--cream);
+  text-shadow:
+    0 1px 2px rgb(43 22 48 / 0.4),
+    0 4px 28px rgb(43 22 48 / 0.5);
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: clamp(
+    0,
+    min(var(--progress, 0) / 0.12, (1 - var(--progress, 0)) / 0.12),
+    1
+  );
+}
+
+.scene--left .shade {
+  background: linear-gradient(90deg, rgb(43 22 48 / 0.6), rgb(43 22 48 / 0.25) 38%, transparent 62%);
+}
+
+.scene--right .shade {
+  background: linear-gradient(270deg, rgb(43 22 48 / 0.6), rgb(43 22 48 / 0.25) 38%, transparent 62%);
+}
+
+.scene--title .shade,
+.scene--coda .shade {
+  background: linear-gradient(0deg, rgb(43 22 48 / 0.7), rgb(43 22 48 / 0.2) 40%, transparent 60%);
+}
+
+.scene--title .shade {
+  opacity: calc(1 - var(--progress, 0));
+}
+
+.scene--coda .shade {
+  opacity: min(1, var(--progress, 0) / 0.15);
+}
+
+.title {
+  position: relative;
+  align-self: flex-end;
+  margin-bottom: 11vh;
+  text-align: center;
+  opacity: calc(1 - var(--progress, 0) * 1.3);
+  transform: translateY(calc(var(--progress, 0) * -6vh));
+}
+
+.title h1 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(3.25rem, 2rem + 5vw, 7rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.title p {
+  margin-top: 1.25rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.stanza {
+  position: relative;
+  max-width: min(34ch, 36vw);
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.4rem, 0.9rem + 1.3vw, 2.2rem);
+  line-height: 1.3;
+  transform: translateY(calc((0.5 - var(--progress, 0)) * 16vh));
+}
+
+.stanza__line {
+  --enter: clamp(0, (var(--progress, 0) / 0.32 * (var(--n) + 1) - var(--i)) / 2, 1);
+  --exit: clamp(0, ((var(--progress, 0) - 0.56) / 0.38 * (var(--n) + 1) - var(--i)) / 2, 1);
+  opacity: calc(var(--enter) - var(--exit));
+  transform: translateY(calc((1 - var(--enter)) * 1.1em - var(--exit) * 1.3em));
+  filter: blur(calc(var(--exit) * 6px));
+}
+
+.stanza--left {
+  margin-right: auto;
+  margin-left: 8vw;
+}
+
+.stanza--right {
+  margin-left: auto;
+  margin-right: 8vw;
+  text-align: right;
+}
+
+.stanza--coda {
+  align-self: flex-end;
+  margin-bottom: 12vh;
+  max-width: 40ch;
+  text-align: center;
+  font-size: clamp(1.75rem, 1.1rem + 2vw, 3.2rem);
+  transform: none;
+}
+
+.stanza--coda .stanza__line {
+  --enter: clamp(0, (var(--progress, 0) / 0.45 * (var(--n) + 1) - var(--i)) / 2, 1);
+  opacity: var(--enter);
+  transform: translateY(calc((1 - var(--enter)) * 1.1em));
+  filter: none;
+}
+
+.sunset-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgb(255 243 227 / 0.75);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.sunset-loader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 24px;
+  background: var(--plum);
+  color: var(--cream);
+  font-family: var(--sans);
+}
+
+.sunset-loader__title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
+  line-height: 1;
+}
+
+.sunset-loader__bar {
+  width: min(280px, 70vw);
+  height: 2px;
+  background: rgb(255 243 227 / 0.2);
+  overflow: hidden;
+}
+
+.sunset-loader__bar > div {
+  height: 100%;
+  background: var(--cream);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.sunset-loader__status {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: min(280px, 70vw);
+  max-width: 60ch;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+@media (max-width: 720px) {
+  .stanza--left,
+  .stanza--right {
+    max-width: none;
+    align-self: flex-end;
+    margin: 0 7vw 14vh;
+    text-align: left;
+    transform: translateY(calc((0.5 - var(--progress, 0)) * 8vh));
+  }
+
+  .scene--left .shade,
+  .scene--right .shade {
+    background: linear-gradient(0deg, rgb(43 22 48 / 0.75), rgb(43 22 48 / 0.25) 45%, transparent 65%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title,
+  .stanza,
+  .stanza__line,
+  .stanza--coda .stanza__line {
+    transform: none;
+    filter: none;
+  }
+}

@@ -1,11 +1,8 @@
 import type { VideoProbe } from "./probe";
 
 export interface TranscodeOptions {
-  /** Short-side resolution cap in px (720 = 720p for landscape and portrait). */
   maxResolution: number;
-  /** Frame rate cap. */
   maxFps: number;
-  /** Seconds between keyframes in the output. */
   keyframeInterval: number;
   onProgress?: (value: number) => void;
   signal?: AbortSignal;
@@ -17,10 +14,8 @@ export function webCodecsAvailable() {
   );
 }
 
-// mediabunny is large; it's only fetched when a video actually needs work.
 const loadMediabunny = () => import("mediabunny");
 
-/** Keyframe layout via a full demuxer (for containers probeMp4 can't read). */
 export async function probeWithDemuxer(blob: Blob): Promise<VideoProbe | null> {
   const mb = await loadMediabunny();
   const input = new mb.Input({ formats: mb.ALL_FORMATS, source: new mb.BlobSource(blob) });
@@ -54,11 +49,6 @@ export async function probeWithDemuxer(blob: Blob): Promise<VideoProbe | null> {
 
 const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
 
-/**
- * Re-encode a video so every seek is cheap: keyframes every
- * `keyframeInterval` seconds, capped resolution/fps, no audio. Uses WebCodecs
- * through mediabunny.
- */
 export async function transcodeForScrubbing(
   blob: Blob,
   opts: TranscodeOptions
@@ -75,9 +65,6 @@ export async function transcodeForScrubbing(
     const height = even(srcH * scale);
     const srcFps = (await track.computePacketStats(100)).averagePacketRate;
 
-    // Encoding a keyframe every few frames is slow on hardware encoders
-    // (measured ~40fps vs ~210fps in software for 720p in Chrome), so prefer
-    // software when the browser has one.
     const software = await mb.canEncodeVideo("avc", {
       width,
       height,

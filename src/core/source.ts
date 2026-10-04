@@ -23,21 +23,14 @@ const PAGE_HOSTS: [RegExp, string][] = [
   [/(^|\.)twitch\.tv$/, "Twitch"],
 ];
 
-/**
- * Reject URLs that point at a video *page* or an adaptive stream rather than
- * a video file. Those can't be scrubbed: the bytes aren't readable and seeks
- * go over the network.
- */
 export function checkSourceUrl(src: string): void {
   let url: URL;
   try {
     url = new URL(src, typeof location !== "undefined" ? location.href : undefined);
   } catch {
-    return; // let the network layer report malformed URLs
+    return;
   }
 
-  // Vimeo/other CDNs do serve real files (e.g. *.mp4 on vimeocdn); only reject
-  // page-shaped URLs on these hosts.
   const looksLikeFile = /\.(mp4|m4v|mov|webm|mkv)$/i.test(url.pathname);
   const page = PAGE_HOSTS.find(([re]) => re.test(url.hostname));
   if (page && !looksLikeFile) {
@@ -61,7 +54,6 @@ export function checkSourceUrl(src: string): void {
 
 const warned = new Set<string>();
 
-/** console.warn, once per distinct message. */
 export function warnOnce(message: string) {
   if (warned.has(message)) return;
   warned.add(message);

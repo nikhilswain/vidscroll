@@ -1,7 +1,3 @@
-// Optimized videos are kept in Cache Storage so only the first visit pays for
-// the in-browser transcode. Entries are validated against the source's
-// response headers, so a changed file at the same URL is re-optimized.
-
 const CACHE_NAME = "vidscroll-v1";
 const FINGERPRINT_HEADER = "x-vidscroll-fingerprint";
 
@@ -13,7 +9,6 @@ function cacheUrl(src: string, settings: string) {
   return `https://vidscroll.cache/${encodeURIComponent(src)}/${settings}`;
 }
 
-/** Identify a source file version from response headers; null if unknowable. */
 export function fingerprintOf(res: Response): string | null {
   const parts = ["content-length", "etag", "last-modified"].map(
     (h) => res.headers.get(h) ?? ""
@@ -33,7 +28,7 @@ export async function readCache(
     if (!hit || hit.headers.get(FINGERPRINT_HEADER) !== fingerprint) return null;
     return await hit.blob();
   } catch {
-    return null; // storage blocked (private mode, quota) — just re-optimize
+    return null;
   }
 }
 
@@ -46,7 +41,6 @@ export async function writeCache(
   if (!available()) return;
   try {
     const cache = await caches.open(CACHE_NAME);
-    // Drop stale versions of this source (other settings or file versions).
     const prefix = cacheUrl(src, "");
     for (const req of await cache.keys()) {
       if (req.url.startsWith(prefix)) await cache.delete(req);
@@ -58,6 +52,6 @@ export async function writeCache(
       })
     );
   } catch {
-    /* quota exceeded etc. — caching is best-effort */
+    return;
   }
 }

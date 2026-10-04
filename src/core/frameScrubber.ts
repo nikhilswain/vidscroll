@@ -1,27 +1,20 @@
 export interface FrameScrubberOptions {
   canvas: HTMLCanvasElement;
-  /** Explicit URL list or a resolver called per index (with `count`). */
   urls: string[] | ((index: number) => string);
-  /** Frame count when using a resolver. Ignored with a URL list. */
   count?: number;
   fit?: "cover" | "contain";
-  /** Cap devicePixelRatio for the backing store. Default 2. */
   maxDpr?: number;
-  /** Parallel image downloads/decodes. Default 12. */
   concurrent?: number;
 }
 
 export interface FrameScrubber {
-  /** Draw a sequence position; the fraction blends toward the next frame. */
   draw(frameFloat: number): void;
-  /** True once enough frames have loaded to scrub without blanks. */
   isReady(): boolean;
   loadedCount(): number;
   onProgress(cb: () => void): void;
   destroy(): void;
 }
 
-/** Turn a "/frames/frame_{i4}.jpg"-style pattern into a URL resolver. */
 export function resolveFrameUrl(pattern: string): (index: number) => string {
   return (index: number) =>
     pattern.replace(/\{i(\d*)\}/g, (_match, pad: string) =>
@@ -29,11 +22,6 @@ export function resolveFrameUrl(pattern: string): (index: number) => string {
     );
 }
 
-/**
- * Canvas player for an image sequence. Frames are fetched and decoded ahead,
- * then blitted per tick — no video decoder in the path, sub-frame blending
- * between neighbors.
- */
 export function createFrameScrubber(
   options: FrameScrubberOptions
 ): FrameScrubber {
@@ -93,9 +81,8 @@ export function createFrameScrubber(
         pump();
       };
       img.onload = settle;
-      img.onerror = settle; // missing frame: skipped, draw falls back to nearest
+      img.onerror = settle;
       img.src = urlOf(i);
-      // Force off-main-thread decode where supported so first draws don't stall.
       if (typeof img.decode === "function") img.decode().catch(() => {});
     }
   }
@@ -140,7 +127,7 @@ export function createFrameScrubber(
 
   function draw(frameFloat: number) {
     if (destroyed || !ctx) return;
-    syncSize(); // cheap; catches resizes between observer ticks
+    syncSize();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const clamped = Math.min(Math.max(frameFloat, 0), count - 1);
     const i = Math.floor(clamped);

@@ -181,6 +181,7 @@ owners download their uploads) and host the file yourself.
 | `smoothScroll` | `false` | Eased mouse-wheel scrolling. `true` or `{ tau, wheelMultiplier }` |
 | `pixelsPerFrame` | 12 | Scroll distance per video frame; sets how long the page is |
 | `fps` | 30 | Frame rate used to compute the scroll length |
+| `fit` | `"cover"` | `"cover"` fills the screen and crops; `"contain"` shows the whole frame with bars |
 | `easing` | linear | `(t) => t` curve from scroll progress to video time; see `easing` export |
 | `sectionDisplayMode` | `"layered"` | `"layered"`, `"exclusive"`, or `"crossfade"` |
 | `crossfadeDurationMs` | 500 | Fade duration in crossfade mode |
@@ -218,8 +219,63 @@ Scrolling is locked while the video loads.
 | `className`, `activeClassName`, `inactiveClassName` | Classes toggled with the active state |
 | `as` | Element type (default `div`) |
 
-Inside a `ScrollVideo`, `useScrollVideo().api` gives access to the engine;
-`api.on("update", (state) => …)` drives progress-based effects.
+### Scroll-driven styles with `--progress`
+
+Each `<Section>` sets a `--progress` CSS variable on its element: `0` before
+its range, `1` after it, and linear in between. It's written straight to the
+DOM, so animating with it costs no React renders. Plain CSS can then fade,
+move or blur anything inside the section as you scroll:
+
+```css
+.caption {
+  opacity: calc(1 - var(--progress));
+  transform: translateY(calc(var(--progress) * -40px));
+}
+```
+
+To reveal lines one after another, give each line its index and the line
+count, and let CSS stagger them:
+
+```tsx
+<Section start={0.1} end={0.4}>
+  <div className="stanza" style={{ "--n": lines.length } as React.CSSProperties}>
+    {lines.map((line, i) => (
+      <p key={i} style={{ "--i": i } as React.CSSProperties}>{line}</p>
+    ))}
+  </div>
+</Section>
+```
+
+```css
+/* Each line fades in over its own slice of the first 40% of the section. */
+.stanza p {
+  --in: clamp(0, var(--progress) / 0.4 * var(--n) - var(--i), 1);
+  opacity: var(--in);
+  transform: translateY(calc((1 - var(--in)) * 1em));
+}
+```
+
+The "A Small Vigil" demo (`demo/src/demos/sunset`) uses this to make lines
+rise in and dissolve one by one.
+
+### From JavaScript
+
+Inside a `ScrollVideo`, `useScrollVideo().api` gives access to the engine:
+
+- `api.on("update", (state) => …)` fires on every frame the video moves, with
+  `state.linearProgress` (0–1), `frameIndex` and `activeSections`.
+- `api.getSectionProgress(id)` returns the same 0–1 value as `--progress`.
+- `api.scrollToTime(seconds)` and `api.scrollToProgress(p)` scroll the page
+  to a point in the video, smoothly by default so the video scrubs through
+  everything on the way. Pass `{ behavior: "instant" }` to jump. Useful for
+  chapter navigation:
+
+```tsx
+function Chapters() {
+  const { api } = useScrollVideo();
+  return <button onClick={() => api?.scrollToTime(12)}>Open water</button>;
+}
+```
 
 ## Image sequences
 
@@ -251,11 +307,22 @@ Scrubbing works in all modern browsers. In-browser re-encoding needs
 WebCodecs: Chrome/Edge 94+, Safari 16.4+, Firefox 130+. Elsewhere, pre-encode
 with the CLI.
 
+## Demos
+
+`npm run dev` serves them at http://localhost:5173:
+
+| Demo | Shows |
+| --- | --- |
+| A Small Vigil | Line-by-line poetry styled only with `--progress` CSS |
+| The Commute | Film framing, captions timed in seconds, chapter jumps with `scrollToTime`, a pre-encoded video |
+| Evening Almanac | Live numbers and an SVG driven from the `update` event, no re-renders |
+| Basics | The smallest setup |
+
 ## Development
 
 ```bash
 npm install
-npm run dev         # demo app (demo/) at http://localhost:5173
+npm run dev         # demos (demo/) at http://localhost:5173
 npm run build       # library → dist/
 npm run typecheck
 npm run lint

@@ -9,14 +9,9 @@ import { ScrollVideoContext } from "./context";
 
 interface ScrollFramesProps
   extends Omit<EngineOptions, "video" | "spacer" | "frames"> {
-  /**
-   * Image sequence source: a pattern with an `{i}` / `{i4}`-style placeholder
-   * (e.g. "/frames/frame_{i4}.jpg"), an explicit URL array, or a resolver.
-   */
   urls: string | string[] | ((index: number) => string);
   count: number;
   fit?: "cover" | "contain";
-  /** Lerped wheel scrolling for buttery input. */
   smoothScroll?: boolean | SmoothScrollOptions;
   sectionDisplayMode?: "layered" | "exclusive" | "crossfade";
   crossfadeDurationMs?: number;
@@ -77,7 +72,6 @@ export function ScrollFrames({
 
   const smoothOn = !!smoothScroll;
 
-  // Lerped wheel scrolling; the engine just reads the animated scrollY.
   useEffect(() => {
     if (!smoothOn) return;
     const o = optionsRef.current.smoothScroll;
@@ -108,8 +102,6 @@ export function ScrollFrames({
       easing: o.easing,
       scrollTarget: o.scrollTarget,
       minScrollHeight: o.minScrollHeight,
-      // With smooth scroll on, the input is already eased — keep engine-side
-      // tracking tight unless the user asked for something specific.
       smoothingTauMs: o.smoothingTauMs ?? (smoothOn ? 35 : undefined),
       debug: o.debug,
       onDebug: o.onDebug,
@@ -123,8 +115,7 @@ export function ScrollFrames({
       engine.destroy();
       scrubber.destroy();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count]);
+  }, [count, smoothOn]);
 
   const contextValue = useMemo(
     () => ({ api, sectionDisplayMode, crossfadeDurationMs }),

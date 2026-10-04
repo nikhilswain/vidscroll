@@ -7,16 +7,17 @@ import type {
   EngineEvent,
   EngineEventHandler,
   EngineEventMap,
+  ScrollToOptionsLite,
 } from "./types";
 
 const DEFAULT_FPS = 30;
 const DEFAULT_PPF = 12;
 const DEFAULT_BUFFER = 2;
-const DEFAULT_TAU_MS = 100; // smoothing time constant; lag stays ~constant
-const TIME_EPSILON_S = 0.001; // skip seeks below 1ms of change
+const DEFAULT_TAU_MS = 100;
+const TIME_EPSILON_S = 0.001;
 const PROGRESS_EPSILON = 0.0005;
-const MAX_TICK_DT_MS = 250; // clamp one smoothing step (throttled tabs, stalls)
-const FRAME_WAIT_TIMEOUT_MS = 300; // stall safety if no paint callback arrives
+const MAX_TICK_DT_MS = 250;
+const FRAME_WAIT_TIMEOUT_MS = 300;
 const PRIME_MAX_SAMPLES = 6;
 const PRIME_MIN_SAMPLES = 3;
 const PRIME_TIMEOUT_MS = 600;
@@ -30,14 +31,6 @@ type VideoWithRVFC = HTMLVideoElement & {
 
 type ListenerSets = { [K in EngineEvent]: Set<EngineEventHandler<K>> };
 
-/**
- * Scroll-scrub engine. Two output modes:
- * - video: the element stays paused; scroll maps to a target time and the
- *   engine seeks one painted frame at a time, paced by requestVideoFrameCallback
- *   (rAF + "seeked" fallback) so the decoder never has a seek backlog.
- * - frames: a canvas FrameRenderer draws per tick at display rate — no decoder
- *   in the path at all.
- */
 export function createEngine(options: EngineOptions): EngineAPI {
   const pixelsPerFrame = options.pixelsPerFrame ?? DEFAULT_PPF;
   const bufferFrames = options.bufferFrames ?? DEFAULT_BUFFER;
@@ -63,8 +56,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let totalFrames = 0;
   let spacerEl: HTMLDivElement | null = options.spacer ?? null;
 
-  let targetProgress = 0; // raw scroll position, 0..1
-  let smoothedProgress = 0; // time-smoothed chase value
+  let targetProgress = 0;
+  let smoothedProgress = 0;
   let lastTickTime = 0;
 
   let tickPending = false;
@@ -77,16 +70,12 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
   let readyEmitted = false;
 
-  // One-time first-decode prime (mobile browsers won't paint a seek until a
-  // frame has decoded); doubles as an fps measurement window.
   let primed = false;
   let priming = false;
   let primeSamples: number[] = [];
   let lastPrimeMediaTime = -1;
   let primeTimeoutId = 0;
 
-  // Load-time warm-up: sweep seeks across the timeline so the first user
-  // scroll lands on pre-touched data instead of a cold decode.
   let warming = false;
   let warmupIndex = 0;
   let warmupTotal = 0;
@@ -94,8 +83,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let destroyed = false;
 
   const sections = new Map<string, NormalizedSection>();
-  // Raw descriptors: time/frame ranges need the duration, which may arrive
-  // after registration, so sections are re-normalized when it changes.
   const sectionDescs = new Map<string, SectionDescriptor>();
   const listeners: ListenerSets = {
     ready: new Set(),
@@ -148,12 +135,15 @@ export function createEngine(options: EngineOptions): EngineAPI {
     }
   }
 
-  // --- scroll → target progress -------------------------------------------
+  function getMaxScrollable() {
+    return (
+      ((spacerEl?.scrollHeight ?? 0) || document.body.scrollHeight) -
+      window.innerHeight
+    );
+  }
 
   function readScrollIntoTarget() {
-    const maxScrollable =
-      ((spacerEl?.scrollHeight ?? 0) || document.body.scrollHeight) -
-      window.innerHeight;
+    const maxScrollable = getMaxScrollable();
     const y =
       scrollTarget === window
         ? window.scrollY
@@ -178,8 +168,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     }
   }
 
-  // --- video loop -----------------------------------------------------------
-
   function requestTick() {
     if (destroyed || tickPending) return;
     if (!framesMode && duration <= 0) return;
@@ -189,7 +177,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
   function applyEasing(p: number) {
     let eased = easingFn(p);
-    // Keep the final frame reachable when easing flattens near 1.
     if (eased > 0.99) {
       const tailPortion = (eased - 0.99) / 0.01;
       eased = 0.99 + tailPortion * (p - 0.99);
@@ -202,8 +189,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (destroyed) return;
     if (!framesMode && duration <= 0) return;
 
-    // Time-based exponential smoothing: constant lag regardless of tick rate,
-    // identical behavior scrolling up and down.
     const dt =
       lastTickTime > 0 ? Math.min(now - lastTickTime, MAX_TICK_DT_MS) : 16.7;
     lastTickTime = now;
@@ -224,7 +209,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       frames.draw(frameFloat);
       emit("update", { ...state });
       if (smoothedProgress === targetProgress) {
-        lastTickTime = 0; // converged; next burst starts fresh
+        lastTickTime = 0;
         return;
       }
       requestTick();
@@ -241,7 +226,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     updateSections();
     emit("update", { ...state });
 
-    // Never issue a new seek while the previous one is still painting.
     if (
       !priming &&
       !warming &&
@@ -257,11 +241,10 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
     const settled = smoothedProgress === targetProgress && !seekInFlight;
     if (settled) {
-      lastTickTime = 0; // next scroll burst starts with a fresh dt
+      lastTickTime = 0;
       return;
     }
-    if (!seekInFlight) requestTick(); // still smoothing at display rate
-    // else: next tick fires from onFrameDone once this seek paints
+    if (!seekInFlight) requestTick();
   }
 
   function armFrameWait() {
@@ -282,7 +265,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (!destroyed) requestTick();
   }
 
-  // Fallback paint signal when rVFC is unavailable ("seeked" = decode done).
   function onSeeked() {
     if (destroyed) return;
     if (warming) {
@@ -293,13 +275,9 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (!hasRVFC && frameWaitActive) onFrameDone();
   }
 
-  // --- first-decode prime + fps measurement --------------------------------
-
   function prime() {
     if (primed || destroyed || !videoEl) return;
     primed = true;
-    // Some mobile browsers won't paint any seeked frame until the element has
-    // decoded once; a brief muted play also exposes real frame cadence via rVFC.
     priming = true;
     primeSamples = [];
     lastPrimeMediaTime = -1;
@@ -326,12 +304,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
       clearTimeout(primeTimeoutId);
       primeTimeoutId = 0;
     }
-    try {
-      videoEl.pause();
-      videoEl.playbackRate = 1;
-    } catch {
-      /* ignore */
-    }
+    videoEl.pause();
+    videoEl.playbackRate = 1;
     if (primeSamples.length >= PRIME_MIN_SAMPLES) {
       primeSamples.sort((a, b) => a - b);
       const median = primeSamples[Math.floor(primeSamples.length / 2)];
@@ -345,8 +319,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     lastTickTime = 0;
     beginWarmup();
   }
-
-  // --- load-time warm-up sweep ----------------------------------------------
 
   function beginWarmup() {
     if (destroyed) return;
@@ -364,9 +336,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (destroyed || !videoEl) return;
     if (warmupIndex >= warmupTotal) return finishWarmup();
     emit("warmup", { value: warmupIndex / warmupTotal });
-    // Seek across the whole timeline, midpoints of even slices.
     videoEl.currentTime = (duration * (warmupIndex + 0.5)) / warmupTotal;
-    // onSeeked advances to the next step.
   }
 
   function finishWarmup() {
@@ -384,13 +354,11 @@ export function createEngine(options: EngineOptions): EngineAPI {
     requestTick();
   }
 
-  // --- sections -------------------------------------------------------------
-
   function updateSections() {
     const newlyActive: string[] = [];
     sections.forEach((sec) => {
-      const active =
-        state.linearProgress >= sec.start && state.linearProgress < sec.end;
+      const p = state.linearProgress;
+      const active = p >= sec.start && (p < sec.end || (sec.end >= 1 && p >= 1));
       if (active && !sec._active) {
         sec._active = true;
         emit("sectionEnter", { id: sec.id, state: { ...state } });
@@ -404,7 +372,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
   }
 
   function normalizeSection(desc: SectionDescriptor): NormalizedSection {
-    // Priority: explicit start/end > times > frames
     let start = desc.start;
     let end = desc.end;
     if (start == null && desc.fromTime != null && duration > 0)
@@ -423,11 +390,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
     return { id: desc.id, start, end, mode: desc.mode || "normal", data: desc.data };
   }
 
-  // --- lifecycle ------------------------------------------------------------
-
   function attachSpacer(el: HTMLDivElement) {
     spacerEl = el;
-    // Provisional height so the page is scrollable before metadata arrives.
     if (!el.style.height) {
       el.style.height =
         Math.max(minScrollHeight, window.innerHeight * 3) + "px";
@@ -439,8 +403,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (destroyed || !videoEl) return;
     recomputeDerived();
     readScrollIntoTarget();
-    smoothedProgress = targetProgress; // snap on first sync
-    // "ready" fires after prime + warm-up complete; see emitReadyNow.
+    smoothedProgress = targetProgress;
     if (videoEl.readyState < 2) prime();
     else beginWarmup();
   }
@@ -449,7 +412,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (destroyed) return;
     recomputeDerived();
     emit("resize", { ...state });
-    readScrollIntoTarget(); // maxScrollable changed
+    readScrollIntoTarget();
     requestTick();
   }
 
@@ -476,12 +439,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
       priming = false;
       removeListeners();
       if (videoEl) {
-        try {
-          videoEl.pause();
-          videoEl.playbackRate = 1;
-        } catch {
-          /* ignore */
-        }
+        videoEl.pause();
+        videoEl.playbackRate = 1;
       }
       if (debug) {
         delete (window as unknown as Record<string, unknown>)
@@ -494,14 +453,12 @@ export function createEngine(options: EngineOptions): EngineAPI {
     isReady() {
       return readyEmitted;
     },
-    // Frames mode: the renderer is async and external; when it can draw it
-    // calls this and the engine does its first sync + emit.
     notifyReady() {
       if (destroyed || readyEmitted) return;
       readyEmitted = true;
       recomputeDerived();
       readScrollIntoTarget();
-      smoothedProgress = targetProgress; // snap on first sync
+      smoothedProgress = targetProgress;
       emit("ready", { ...state });
       requestTick();
     },
@@ -518,6 +475,30 @@ export function createEngine(options: EngineOptions): EngineAPI {
       sections.set(desc.id, normalizeSection(desc));
       updateSections();
     },
+    scrollToProgress(progress: number, opts?: ScrollToOptionsLite) {
+      const top = Math.min(Math.max(progress, 0), 1) * Math.max(getMaxScrollable(), 0);
+      const behavior = opts?.behavior ?? "smooth";
+      if (scrollTarget === window) window.scrollTo({ top, behavior });
+      else (scrollTarget as HTMLElement).scrollTo({ top, behavior });
+    },
+    scrollToTime(seconds: number, opts?: ScrollToOptionsLite) {
+      if (duration <= 0) return;
+      const want = Math.min(Math.max(seconds / duration, 0), 1);
+      let lo = 0;
+      let hi = 1;
+      for (let i = 0; i < 32; i++) {
+        const mid = (lo + hi) / 2;
+        if (applyEasing(mid) < want) lo = mid;
+        else hi = mid;
+      }
+      api.scrollToProgress(hi, opts);
+    },
+    getSectionProgress(id: string) {
+      const sec = sections.get(id);
+      if (!sec) return 0;
+      const t = (state.linearProgress - sec.start) / (sec.end - sec.start);
+      return Math.min(Math.max(t, 0), 1);
+    },
     unregisterSection(id: string) {
       sections.delete(id);
       sectionDescs.delete(id);
@@ -525,7 +506,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     },
   };
 
-  // Listeners
   window.addEventListener("resize", onResize);
   if (scrollTarget instanceof Window) {
     scrollTarget.addEventListener("scroll", scheduleScrollRead, {

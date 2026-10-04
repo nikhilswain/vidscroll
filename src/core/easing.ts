@@ -1,4 +1,3 @@
-// Basic easing helpers (can be tree-shaken)
 export const easing = {
   none: (t: number) => t,
   outCubic: (t: number) => 1 - Math.pow(1 - t, 3),

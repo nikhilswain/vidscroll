@@ -8,35 +8,24 @@ import {
 } from "./transcode";
 
 export interface OptimizeOptions {
-  /**
-   * Re-encode when keyframes are further apart than this many seconds.
-   * Seek cost grows with keyframe distance. Default 0.5.
-   */
   maxKeyframeGap?: number;
-  /** Short-side resolution cap for re-encoded output (720 = 720p). Default 720. */
   maxResolution?: number;
-  /** Frame-rate cap for re-encoded output. Default 30, or 15 for videos over 2 minutes. */
   maxFps?: number;
-  /** Keep the re-encoded video in Cache Storage for later visits. Default true. */
   cache?: boolean;
 }
 
 export type LoadPhase = "download" | "optimize";
 
 export interface LoadVideoOptions {
-  /** `false` skips re-encoding; long-GOP videos will then scrub slowly. */
   optimize?: boolean | OptimizeOptions;
   onProgress?: (phase: LoadPhase, value: number) => void;
   signal?: AbortSignal;
 }
 
 export interface LoadedVideo {
-  /** URL to give the <video> element (an object URL unless streaming fell back). */
   url: string;
-  /** How the video ended up being served. */
   source: "original" | "optimized" | "cache" | "stream";
   probe: VideoProbe | null;
-  /** Revoke the object URL. */
   release(): void;
 }
 
@@ -57,11 +46,6 @@ function objectUrlResult(
   return { url, source, probe, release: () => URL.revokeObjectURL(url) };
 }
 
-/**
- * Fetch a video and make it cheap to scrub. Videos with keyframes close
- * together are used as-is; others are re-encoded in the browser (WebCodecs)
- * and cached. Falls back to streaming the URL when the bytes can't be read.
- */
 export async function loadScrollVideo(
   src: string,
   opts: LoadVideoOptions = {}
@@ -87,7 +71,6 @@ export async function loadScrollVideo(
   if (!res.ok) {
     throw new VidscrollError("http-error", `[vidscroll] HTTP ${res.status} loading "${src}".`);
   }
-  // SPA hosts (and Vite's dev server) answer unknown paths with index.html + 200.
   if (/^text\/html/i.test(res.headers.get("content-type") ?? "")) {
     res.body?.cancel().catch(() => {});
     throw new VidscrollError(
@@ -97,7 +80,6 @@ export async function loadScrollVideo(
     );
   }
 
-  // Serve a previously optimized copy if the source hasn't changed.
   const fingerprint = fingerprintOf(res);
   const cacheOn = !!optimize && optimize.cache !== false && fingerprint != null;
   const settings = optimize
@@ -112,7 +94,6 @@ export async function loadScrollVideo(
     }
   }
 
-  // Download with real progress.
   const total = Number(res.headers.get("content-length")) || 0;
   if (total > LARGE_FILE_BYTES) {
     warnOnce(
@@ -146,7 +127,6 @@ export async function loadScrollVideo(
     type: res.headers.get("content-type") || "video/mp4",
   });
 
-  // How far apart are the keyframes?
   let probe = probeMp4(await blob.arrayBuffer());
   if (!probe && webCodecsAvailable()) {
     probe = await probeWithDemuxer(blob).catch(() => null);

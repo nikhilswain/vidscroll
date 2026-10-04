@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// vidscroll CLI — prepare videos for scroll scrubbing.
-//
-// Browsers can only start decoding at a keyframe, so a seek costs time
-// proportional to the distance from the previous keyframe. Typical exports
-// put keyframes seconds apart (hundreds of ms per seek); a keyframe every
-// ~10 frames keeps every seek within one display frame.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
@@ -31,12 +25,8 @@ function fail(message) {
 
 async function findFfmpeg() {
   if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
-  try {
-    const { default: path } = await import("ffmpeg-static");
-    if (path && existsSync(path)) return path;
-  } catch {
-    /* not installed */
-  }
+  const bundled = await import("ffmpeg-static").then((m) => m.default, () => null);
+  if (bundled && existsSync(bundled)) return bundled;
   const probe = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" });
   if (probe.status === 0) return "ffmpeg";
   return null;
@@ -85,7 +75,6 @@ async function encode(argv) {
     );
   }
 
-  // Scale the short side down to `resolution` (never up), keep aspect, even dims.
   const scale =
     `scale='if(gt(iw,ih),-2,min(${resolution},iw))':` +
     `'if(gt(iw,ih),min(${resolution},ih),-2)'`;
@@ -98,16 +87,16 @@ async function encode(argv) {
       "-loglevel", "error",
       "-stats",
       "-i", input,
-      "-an", // audio never plays while scrubbing
+      "-an",
       "-vf", filters,
       "-c:v", "libx264",
       "-preset", "slow",
       "-pix_fmt", "yuv420p",
       "-g", String(gop),
       "-keyint_min", String(gop),
-      "-sc_threshold", "0", // fixed keyframe spacing, no scene-cut extras
+      "-sc_threshold", "0",
       "-crf", String(crf),
-      "-movflags", "+faststart", // plain MP4 with the index up front
+      "-movflags", "+faststart",
       output,
     ],
     { stdio: "inherit" }

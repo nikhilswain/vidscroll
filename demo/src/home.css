@@ -1,0 +1,69 @@
+.home {
+  min-height: 100vh;
+  padding: clamp(48px, 12vh, 140px) clamp(24px, 8vw, 120px);
+  background:
+    radial-gradient(120% 80% at 70% 0%, rgb(140 110 155 / 0.45), transparent 60%),
+    var(--plum);
+}
+
+.home__header {
+  max-width: 40rem;
+}
+
+.home__header h1 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(3rem, 2rem + 4vw, 5.5rem);
+  line-height: 1;
+}
+
+.home__header p {
+  margin-top: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+.home__header code {
+  font-family: inherit;
+  color: var(--peach);
+}
+
+.home__list {
+  list-style: none;
+  margin-top: clamp(40px, 8vh, 80px);
+  max-width: 40rem;
+}
+
+.home__list a {
+  display: block;
+  padding: 1.25rem 0;
+  border-top: 1px solid rgb(255 243 227 / 0.15);
+  text-decoration: none;
+}
+
+.home__list li:last-child a {
+  border-bottom: 1px solid rgb(255 243 227 / 0.15);
+}
+
+.home__name {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.4rem);
+  line-height: 1.15;
+}
+
+.home__list a:hover .home__name {
+  color: var(--peach);
+}
+
+.home__desc {
+  display: block;
+  margin-top: 0.4rem;
+  max-width: 60ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  opacity: 0.7;
+}
