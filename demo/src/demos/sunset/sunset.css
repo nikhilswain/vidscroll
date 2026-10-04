@@ -127,7 +127,7 @@
   justify-items: center;
   gap: 1.25rem;
   padding: 24px;
-  background: var(--plum);
+  background: rgb(43 22 48 / 0.6);
   color: var(--cream);
   font-family: var(--sans);
 }
@@ -140,7 +140,7 @@
 }
 
 .sunset-loader__bar {
-  width: min(280px, 70vw);
+  width: min(360px, 80vw);
   height: 2px;
   background: rgb(255 243 227 / 0.2);
   overflow: hidden;
@@ -157,7 +157,7 @@
   display: flex;
   justify-content: space-between;
   gap: 1.5rem;
-  width: min(280px, 70vw);
+  width: min(360px, 80vw);
   max-width: 60ch;
   font-size: 0.85rem;
   opacity: 0.75;

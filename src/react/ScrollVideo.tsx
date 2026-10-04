@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
 import { createEngine } from "../core/engine";
 import { loadScrollVideo } from "../core/load";
+import { checkSourceUrl } from "../core/source";
 import type { LoadedVideo, OptimizeOptions } from "../core/load";
 import { acquireSmoothScroll } from "../core/smoothScroll";
 import type { SmoothScrollOptions } from "../core/smoothScroll";
@@ -25,6 +26,7 @@ export interface ScrollVideoProps
   onLoad?: (info: Pick<LoadedVideo, "source" | "probe">) => void;
   onError?: (error: Error) => void;
   fit?: "cover" | "contain";
+  poster?: string | false;
   className?: string;
   style?: CSSProperties;
 }
@@ -83,6 +85,7 @@ export function ScrollVideo({
   fullPreload = true,
   loader,
   fit = "cover",
+  poster,
   onLoad,
   onError,
   debug,
@@ -221,6 +224,17 @@ export function ScrollVideo({
 
   const contextValue = useMemo(() => ({ api }), [api]);
 
+  const previewSrc = useMemo(() => {
+    try {
+      checkSourceUrl(src);
+    } catch {
+      return null;
+    }
+    return src.includes("#") ? src : `${src}#t=0.001`;
+  }, [src]);
+  const showPreview =
+    poster === undefined && fullPreload && previewSrc != null && loading != null && loading.phase !== "error";
+
   return (
     <ScrollVideoContext.Provider value={contextValue}>
       <BaseStyles />
@@ -231,10 +245,23 @@ export function ScrollVideo({
             data-vidscroll-media=""
             data-fit={fit}
             src={videoUrl ?? undefined}
+            poster={poster || undefined}
             muted
             playsInline
             preload="auto"
           />
+          {showPreview && (
+            <video
+              data-vidscroll-media=""
+              data-vidscroll-preview=""
+              data-fit={fit}
+              src={previewSrc}
+              muted
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+            />
+          )}
           <div data-vidscroll-overlay="">{children}</div>
           {loading && loader !== false && (
             <div data-vidscroll-loader="">

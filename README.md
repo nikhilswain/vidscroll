@@ -187,7 +187,8 @@ owners download their uploads) and host the file yourself.
 | `smoothScroll` | `false` | Eased mouse-wheel scrolling for the page. `true` or `{ tau, wheelMultiplier }` |
 | `fit` | `"cover"` | `"cover"` fills the stage and crops; `"contain"` shows the whole frame |
 | `easing` | linear | `(t) => t` curve from scroll progress to video time; see `easing` export |
-| `loader` | built-in | `false`, a React node, or `(state) => node` with `{ phase, progress, error }` |
+| `poster` | first frame | Shown while loading. By default the video's first frame is fetched and shown behind the loader; pass an image URL instead, or `false` for none |
+| `loader` | built-in | `false`, a React node, or `(state) => node` with `{ phase, progress, error }`. The default is a translucent overlay |
 | `onLoad` | | `({ source, probe }) => void`. `source` is `"original"`, `"optimized"`, `"cache"` or `"stream"` |
 | `onError` | | `(error) => void`. Errors are `VidscrollError` with a `code` |
 | `fullPreload` | `true` | `false` streams the URL directly and skips optimization |
