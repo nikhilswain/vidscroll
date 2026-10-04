@@ -270,30 +270,7 @@ move or blur anything inside the section as you scroll:
 }
 ```
 
-To reveal lines one after another, give each line its index and the line
-count, and let CSS stagger them:
-
-```tsx
-<Section start={0.1} end={0.4}>
-  <div className="stanza" style={{ "--n": lines.length } as React.CSSProperties}>
-    {lines.map((line, i) => (
-      <p key={i} style={{ "--i": i } as React.CSSProperties}>{line}</p>
-    ))}
-  </div>
-</Section>
-```
-
-```css
-/* Each line fades in over its own slice of the first 40% of the section. */
-.stanza p {
-  --in: clamp(0, var(--progress) / 0.4 * var(--n) - var(--i), 1);
-  opacity: var(--in);
-  transform: translateY(calc((1 - var(--in)) * 1em));
-}
-```
-
-The "A Small Vigil" demo (`demo/src/demos/sunset`) uses this to make lines
-rise in and dissolve one by one.
+See [Recipes](#recipes) for staggered lines, reveals and more.
 
 ### Whole-video progress: `--video-progress`
 
@@ -358,6 +335,149 @@ function Chapters() {
 ```
 
 - `api.getSectionProgress(id)` returns the same 0–1 value as `--progress`.
+
+## Recipes
+
+Each of these is taken from a demo and needs nothing beyond the library and
+your own CSS.
+
+### Text that fades in and out across its range
+
+```tsx
+<Section fromTime={9.6} toTime={12} className="caption">
+  <p>She closes her eyes.</p>
+</Section>
+```
+
+```css
+.caption p {
+  opacity: clamp(0, min(var(--progress) / 0.15, (1 - var(--progress)) / 0.15), 1);
+}
+```
+
+Fades in over the first 15% of the range, out over the last 15%.
+
+### Lines that rise in, then dissolve one by one
+
+Give each line its index (`--i`) and the stanza its line count (`--n`):
+
+```tsx
+const lines = ["Every evening, the same fence,", "the same warm wood beneath the paws.", "The cat stays."];
+
+<Section start={0.1} end={0.4}>
+  <div className="stanza" style={{ "--n": lines.length } as React.CSSProperties}>
+    {lines.map((line, i) => (
+      <p key={i} style={{ "--i": i } as React.CSSProperties}>{line}</p>
+    ))}
+  </div>
+</Section>
+```
+
+```css
+.stanza p {
+  --enter: clamp(0, (var(--progress) / 0.32 * (var(--n) + 1) - var(--i)) / 2, 1);
+  --exit: clamp(0, ((var(--progress) - 0.56) / 0.38 * (var(--n) + 1) - var(--i)) / 2, 1);
+  opacity: calc(var(--enter) - var(--exit));
+  transform: translateY(calc((1 - var(--enter)) * 1.1em - var(--exit) * 1.3em));
+  filter: blur(calc(var(--exit) * 6px));
+}
+```
+
+Lines enter during the first 32% of the section, the stanza holds until 56%,
+then lines dissolve upward in the same order. Each line's animation overlaps
+the next one's by half.
+
+### A circular reveal
+
+```tsx
+<Section start={0} end={0.07} className="iris">
+  <div className="iris__mask" />
+  <h1>The Commute</h1>
+</Section>
+```
+
+```css
+.iris__mask {
+  position: absolute;
+  inset: 0;
+  --r: calc(var(--progress) * 80vmax);
+  background: radial-gradient(circle, transparent var(--r), #000 var(--r));
+}
+.iris h1 {
+  position: relative;
+  opacity: calc(1 - var(--progress) * 2);
+}
+```
+
+### A progress bar
+
+```tsx
+<ScrollVideo src="/hero.mp4">
+  <div className="progress-bar" />
+</ScrollVideo>
+```
+
+```css
+.progress-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: white;
+  transform-origin: left;
+  transform: scaleX(var(--video-progress));
+}
+```
+
+### Chapters you can jump between
+
+```tsx
+const CHAPTERS = [
+  { title: "Doors", at: 0 },
+  { title: "Open water", at: 12.2 },
+  { title: "Away", at: 25.1 },
+];
+
+function ChapterNav() {
+  const { api } = useScrollVideo();
+  const [current, setCurrent] = useState(0);
+  useScrollVideoUpdate(({ time }) => {
+    let index = 0;
+    CHAPTERS.forEach((c, i) => {
+      if (time >= c.at) index = i;
+    });
+    setCurrent(index);
+  });
+  return (
+    <nav style={{ pointerEvents: "auto" }}>
+      {CHAPTERS.map((c, i) => (
+        <button key={c.title} aria-current={i === current} onClick={() => api?.scrollToTime(c.at)}>
+          {c.title}
+        </button>
+      ))}
+    </nav>
+  );
+}
+```
+
+`setCurrent` only re-renders when the chapter changes. The overlay ignores
+pointer events by default, so interactive elements need `pointer-events: auto`.
+
+### Live numbers driven by the scroll
+
+```tsx
+function Clock() {
+  const ref = useRef<HTMLParagraphElement>(null);
+  useScrollVideoUpdate(({ linearProgress }) => {
+    const minutes = 18 * 60 + 42 + linearProgress * 49;
+    const text = `${Math.floor(minutes / 60)}:${String(Math.floor(minutes % 60)).padStart(2, "0")}`;
+    if (ref.current && ref.current.textContent !== text) ref.current.textContent = text;
+  });
+  return <p ref={ref}>18:42</p>;
+}
+```
+
+Writing to the DOM through a ref keeps it at display rate without
+re-rendering React.
 
 ## Image sequences
 
