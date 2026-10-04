@@ -34,7 +34,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "vidscroll": "./bin/vidscroll.mjs"
+    "vidscroll": "bin/vidscroll.mjs"
   },
   "files": [
     "dist",
