@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DEMOS } from "./demos";
+import { Diagnostics } from "./Diagnostics";
 import { Home } from "./Home";
 import { TopBar } from "./TopBar";
 
@@ -32,6 +33,7 @@ export default function App() {
     <>
       <TopBar demo={demo} />
       <Demo key={demo.slug} />
+      <Diagnostics key={demo.slug} />
     </>
   );
 }
