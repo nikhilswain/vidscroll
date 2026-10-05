@@ -13,6 +13,11 @@ import type {
 const DEFAULT_FPS = 30;
 const AUTO_VH_PER_SECOND = 40;
 const DEFAULT_TAU_MS = 100;
+const FAST_TAU_MS = 150;
+const FAST_FROM_SPEED = 2;
+const FAST_TO_SPEED = 8;
+const SPEED_DECAY_MS = 300;
+const JUMP_S = 1;
 const TIME_EPSILON_S = 0.001;
 const PROGRESS_EPSILON = 0.0005;
 const MAX_TICK_DT_MS = 250;
@@ -70,6 +75,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let targetProgress = 0;
   let smoothedProgress = 0;
   let lastTickTime = 0;
+  let lastTargetProgress = NaN;
+  let scrollSpeed = 0;
 
   let tickPending = false;
   let tickRafId = 0;
@@ -210,15 +217,27 @@ export function createEngine(options: EngineOptions): EngineAPI {
     return Math.min(Math.max(eased, 0), 1);
   }
 
+  function smoothingTau(dt: number, waking: boolean) {
+    const seconds = framesMode ? totalFrames / fps : duration;
+    const moved = Number.isNaN(lastTargetProgress) ? 0 : Math.abs(targetProgress - lastTargetProgress) * seconds;
+    lastTargetProgress = targetProgress;
+    if (waking || moved > JUMP_S) scrollSpeed = 0;
+    if (moved > JUMP_S) return tauMs;
+    const speed = moved / (dt / 1000);
+    scrollSpeed = speed > scrollSpeed ? speed : scrollSpeed + (speed - scrollSpeed) * (1 - Math.exp(-dt / SPEED_DECAY_MS));
+    const fast = Math.min(1, Math.max(0, (scrollSpeed - FAST_FROM_SPEED) / (FAST_TO_SPEED - FAST_FROM_SPEED)));
+    return tauMs + (Math.max(tauMs, FAST_TAU_MS) - tauMs) * fast;
+  }
+
   function tick(now: number) {
     tickPending = false;
     if (destroyed) return;
     if (!framesMode && duration <= 0) return;
 
-    const dt =
-      lastTickTime > 0 ? Math.min(now - lastTickTime, MAX_TICK_DT_MS) : 16.7;
+    const waking = lastTickTime === 0;
+    const dt = waking ? 16.7 : Math.min(now - lastTickTime, MAX_TICK_DT_MS);
     lastTickTime = now;
-    const alpha = 1 - Math.exp(-dt / tauMs);
+    const alpha = 1 - Math.exp(-dt / smoothingTau(dt, waking));
     smoothedProgress += (targetProgress - smoothedProgress) * alpha;
     if (Math.abs(targetProgress - smoothedProgress) < PROGRESS_EPSILON) {
       smoothedProgress = targetProgress;

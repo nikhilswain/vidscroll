@@ -212,7 +212,7 @@ owners download their uploads) and host the file yourself.
 | `fullPreload` | `true` | `false` streams the URL directly and skips optimization |
 | `className`, `style` | | Applied to the outer block |
 | `fps` | 30 | Frame rate used for frame-based section ranges |
-| `smoothingTauMs` | 100 (35 with `smoothScroll`) | How tightly the video follows the scroll position |
+| `smoothingTauMs` | 100 (35 with `smoothScroll`) | How tightly the video follows the scroll position. After fast scrolling (over 2x the video's speed) the follow loosens to up to 150 ms, so the video and sections glide to a stop instead of jumping. Jumps of more than 1 s of video in one frame (scrollbar drags, `behavior: "instant"`) snap straight there |
 | `warmup` | `true` | Touch the whole timeline once while loading. `false` or a step count |
 | `debug` / `onDebug` | | Log engine internals |
 

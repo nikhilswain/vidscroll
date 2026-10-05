@@ -63,12 +63,14 @@ function loaderState(
   hasVideo: boolean,
   ready: boolean,
   warmup: number,
-  pipeline: Pipeline | null
+  pipeline: Pipeline | null,
+  swapping: boolean
 ): LoaderState | null {
   if (error) return { phase: "error", progress: 0, background: false, error };
   if (!hasVideo) return { phase: pipeline?.phase ?? "download", progress: pipeline?.progress ?? 0, background: false };
   if (!ready) return { phase: "preparing", progress: warmup, background: false };
   if (pipeline) return { ...pipeline, background: true };
+  if (swapping) return { phase: "optimize", progress: 1, background: true };
   return null;
 }
 
@@ -380,7 +382,7 @@ export function ScrollVideo({
     if (!(duration > 0 && Number.isFinite(duration))) failPlayback("its duration is unknown, so it can't seek");
   };
 
-  const loading = loaderState(error, slots.active != null, ready, warmupProgress, pipeline);
+  const loading = loaderState(error, slots.active != null, ready, warmupProgress, pipeline, slots.next != null);
   const loaderContent = !loading
     ? null
     : typeof loader === "function"
