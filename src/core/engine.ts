@@ -31,6 +31,7 @@ const PREVIEW_SEEK_STALL_MS = 5000;
 const SWAP_TOLERANCE_S = 0.1;
 const PLAY_MAX_LEAD_S = 4;
 const PLAY_MAX_OVERSHOOT_S = 0.15;
+const PLAY_SMOOTH_OVERSHOOT_S = 0.04;
 const PLAY_CLOSE_ENOUGH_S = 0.02;
 const PLAY_CATCH_UP_S = 0.05;
 const PLAY_MIN_RATE = 0.1;
@@ -48,6 +49,12 @@ type VideoWithRVFC = HTMLVideoElement & {
 
 type ListenerSets = { [K in EngineEvent]: Set<EngineEventHandler<K>> };
 
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+function isAndroid() {
+  return typeof navigator !== "undefined" && /Android/.test(navigator.userAgent);
+}
+
 export function createEngine(options: EngineOptions): EngineAPI {
   const container = options.container;
   const stage = options.stage ?? null;
@@ -55,6 +62,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
   const easingFn = options.easing || ((t: number) => t);
   const tauMs = options.smoothingTauMs ?? DEFAULT_TAU_MS;
   let preview = options.preview === true;
+  const playsForward = isAndroid();
   const warmupEnabled = options.warmup !== false && !preview;
   const warmupStepsOpt = typeof options.warmup === "number" ? options.warmup : 0;
   const debug = options.debug === true;
@@ -279,7 +287,13 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
     const seeking = videoEl!.seeking;
     const followedByPlaying =
-      preview && !playBlocked && !priming && !warming && !seekInFlight && !seeking && playToward(targetTime);
+      (preview || playsForward) &&
+      !playBlocked &&
+      !priming &&
+      !warming &&
+      !seekInFlight &&
+      !seeking &&
+      playToward(targetTime);
     const stalled = seeking && now - requestedAt > (preview ? PREVIEW_SEEK_STALL_MS : SEEK_STALL_MS);
     const newTarget = !(Math.abs(requestedTime - targetTime) <= TIME_EPSILON_S);
     const rested = now >= nextSeekAt || Math.abs(targetVelocity) < TARGET_AT_REST;
@@ -304,20 +318,18 @@ export function createEngine(options: EngineOptions): EngineAPI {
   function playToward(targetTime: number) {
     const video = videoEl!;
     const lead = targetTime - video.currentTime;
-    if (lead > PLAY_MAX_LEAD_S || lead < -PLAY_MAX_OVERSHOOT_S) {
+    if (lead > PLAY_MAX_LEAD_S || lead < -(preview ? PLAY_MAX_OVERSHOOT_S : PLAY_SMOOTH_OVERSHOOT_S)) {
       stopPlaying();
       return false;
     }
-    if (lead <= PLAY_CLOSE_ENOUGH_S) {
+    const moving = targetVelocity > TARGET_AT_REST;
+    if (lead <= PLAY_CLOSE_ENOUGH_S && !(playing && moving)) {
       stopPlaying();
       requestedTime = targetTime;
       return true;
     }
-    const rate = Math.min(
-      PLAY_MAX_RATE,
-      lead / PLAY_CATCH_UP_S,
-      Math.max(PLAY_MIN_RATE, targetVelocity + lead * 2)
-    );
+    const wanted = targetVelocity + lead * 2;
+    const rate = clamp(moving ? wanted : Math.min(wanted, lead / PLAY_CATCH_UP_S), PLAY_MIN_RATE, PLAY_MAX_RATE);
     if (Math.abs(video.playbackRate - rate) > 0.05) video.playbackRate = rate;
     if (!playing) {
       playing = true;
@@ -370,7 +382,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       stepWarmup();
       return;
     }
-    if (frameWaitActive) onFrameDone();
+    if (!hasRVFC && frameWaitActive) onFrameDone();
   }
 
   function prime() {
