@@ -212,7 +212,7 @@ owners download their uploads) and host the file yourself.
 | `fit` | `"cover"` | `"cover"` fills the stage and crops; `"contain"` shows the whole frame |
 | `easing` | linear | `(t) => t` curve from scroll progress to video time; see `easing` export |
 | `poster` | first frame | Shown while loading. By default the video's first frame is fetched and shown behind the loader; pass an image URL instead, or `false` for none |
-| `loader` | built-in | `false`, a React node, or `(state) => node` with `{ phase, progress, error }`. The default is a translucent overlay |
+| `loader` | built-in | `false`, a React node, or `(state, builtIn) => node` with state `{ phase, progress, background, error }` and `builtIn` the default loader for that state. The default is a translucent overlay, and a small corner badge while a raw video is scrollable but still re-encoding. See [Loader states](#loader-states) |
 | `onLoad` | | `({ source, probe }) => void`, called once the final video is known. `source` is `"original"`, `"optimized"`, `"cache"` or `"stream"` |
 | `onError` | | `(error) => void`. Errors are `VidscrollError` with a `code` |
 | `fullPreload` | `true` | `false` streams the URL directly and skips optimization |
@@ -247,6 +247,23 @@ corner (`[data-vidscroll-loader][data-background]`) instead of covering the
 video, so return something small, or `null` to show nothing. A loader passed
 as a plain node rather than a function is shown only while the video is
 covered.
+
+With `optimize={{ wait: true }}` there is no background phase: the full loader
+stays until the smooth copy is ready.
+
+#### Customizing the corner badge
+
+| You want | Do this |
+| --- | --- |
+| No badge, built-in loader otherwise | `[data-vidscroll-loader][data-background] { display: none; }` in your CSS |
+| The badge somewhere else, or styled differently | Style `[data-vidscroll-loader][data-background]`, e.g. `inset: 16px 16px auto auto` for the top-right corner |
+| Your own badge, built-in loader otherwise | `loader={(s, builtIn) => (s.background ? <MyBadge progress={s.progress} /> : builtIn)}` |
+| Your own loader, built-in badge | `loader={(s, builtIn) => (s.background ? builtIn : <MyLoader state={s} />)}` |
+| Your own loader, no badge | `loader={<MyLoader />}` (a plain node only shows while the video is covered) |
+| Nothing at all | `loader={false}` |
+
+The default rules have zero specificity, so plain CSS like the above wins
+without `!important`.
 
 ## `<Section>` props
 

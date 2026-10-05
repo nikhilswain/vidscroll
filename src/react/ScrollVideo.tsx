@@ -24,7 +24,7 @@ export interface ScrollVideoProps
   optimize?: boolean | OptimizeOptions;
   smoothScroll?: boolean | SmoothScrollOptions;
   fullPreload?: boolean;
-  loader?: ReactNode | false | ((state: LoaderState) => ReactNode);
+  loader?: ReactNode | false | ((state: LoaderState, builtIn: ReactNode) => ReactNode);
   onLoad?: (info: Pick<LoadedVideo, "source" | "probe">) => void;
   onError?: (error: Error) => void;
   fit?: "cover" | "contain";
@@ -386,7 +386,7 @@ export function ScrollVideo({
   const loaderContent = !loading
     ? null
     : typeof loader === "function"
-      ? loader(loading)
+      ? loader(loading, DefaultLoader(loading))
       : loader == null
         ? DefaultLoader(loading)
         : loading.background
