@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DEMOS } from "./demos";
 import { Diagnostics } from "./Diagnostics";
 import { Home } from "./Home";
+import { Lab } from "./Lab";
 import { TopBar } from "./TopBar";
 
 const slugFromHash = () => location.hash.replace(/^#\/?/, "");
@@ -17,6 +18,8 @@ export default function App() {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  if (slug === "lab") return <Lab />;
 
   const demo = DEMOS.find((d) => d.slug === slug);
   if (!demo) {

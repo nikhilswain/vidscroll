@@ -168,3 +168,84 @@ a {
   margin-top: 6px;
   opacity: 0.7;
 }
+
+.lab__stage {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+.lab__stage video,
+.lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lab__panel {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 1;
+  max-width: 520px;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.8);
+  color: #fff;
+  font: 12px/1.5 ui-monospace, "Cascadia Code", Menlo, monospace;
+}
+
+.lab__panel h1 {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.lab__actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.lab__panel button {
+  padding: 8px 14px;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.lab__panel button:disabled {
+  opacity: 0.4;
+}
+
+.lab__panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.lab__panel th,
+.lab__panel td {
+  padding: 2px 4px;
+  text-align: right;
+}
+
+.lab__panel th:first-child,
+.lab__panel td:first-child {
+  text-align: left;
+}
+
+.lab__panel textarea {
+  width: 100%;
+  margin-top: 8px;
+  background: #111;
+  color: inherit;
+  font: inherit;
+}
+
