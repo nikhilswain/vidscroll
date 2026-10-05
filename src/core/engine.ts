@@ -1,3 +1,5 @@
+import { easing, invertEasing } from "./easing";
+import { warnOnce } from "./source";
 import type {
   EngineOptions,
   EngineAPI,
@@ -51,6 +53,15 @@ type ListenerSets = { [K in EngineEvent]: Set<EngineEventHandler<K>> };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
+function resolveEasing(option: EngineOptions["easing"]) {
+  if (typeof option !== "string") return option ?? easing.none;
+  if (option in easing) return easing[option];
+  warnOnce(
+    `[vidscroll] Unknown easing "${option}". Use one of ${Object.keys(easing).join(", ")}, or pass a function.`
+  );
+  return easing.none;
+}
+
 function isAndroid() {
   return typeof navigator !== "undefined" && /Android/.test(navigator.userAgent);
 }
@@ -59,7 +70,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
   const container = options.container;
   const stage = options.stage ?? null;
   const lengthOpt = options.length ?? "auto";
-  const easingFn = options.easing || ((t: number) => t);
+  const easingFn = resolveEasing(options.easing);
   const tauMs = options.smoothingTauMs ?? DEFAULT_TAU_MS;
   let preview = options.preview === true;
   const playsForward = isAndroid();
@@ -487,17 +498,21 @@ export function createEngine(options: EngineOptions): EngineAPI {
     state.activeSections = newlyActive;
   }
 
+  function progressFor(fraction: number) {
+    return invertEasing(applyEasing, Math.min(Math.max(fraction, 0), 1));
+  }
+
   function normalizeSection(desc: SectionDescriptor): NormalizedSection {
     let start = desc.start;
     let end = desc.end;
     if (start == null && desc.fromTime != null && duration > 0)
-      start = desc.fromTime / duration;
+      start = progressFor(desc.fromTime / duration);
     if (end == null && desc.toTime != null && duration > 0)
-      end = desc.toTime / duration;
+      end = progressFor(desc.toTime / duration);
     if (start == null && desc.fromFrame != null && totalFrames > 0)
-      start = desc.fromFrame / totalFrames;
+      start = progressFor(desc.fromFrame / totalFrames);
     if (end == null && desc.toFrame != null && totalFrames > 0)
-      end = desc.toFrame / totalFrames;
+      end = progressFor(desc.toFrame / totalFrames);
     if (start == null) start = 0;
     if (end == null) end = 1;
     start = Math.min(Math.max(start, 0), 1);
@@ -643,15 +658,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     },
     scrollToTime(seconds: number, opts?: ScrollToOptionsLite) {
       if (duration <= 0) return;
-      const want = Math.min(Math.max(seconds / duration, 0), 1);
-      let lo = 0;
-      let hi = 1;
-      for (let i = 0; i < 32; i++) {
-        const mid = (lo + hi) / 2;
-        if (applyEasing(mid) < want) lo = mid;
-        else hi = mid;
-      }
-      api.scrollToProgress(hi, opts);
+      api.scrollToProgress(progressFor(seconds / duration), opts);
     },
     getSectionProgress(id: string) {
       const sec = sections.get(id);

@@ -1,9 +1,11 @@
+import type { EasingName } from "./easing";
+
 export interface EngineOptions {
   container: HTMLElement;
   stage?: HTMLElement;
   length?: number | string;
   fps?: number;
-  easing?: (t: number) => number;
+  easing?: ((t: number) => number) | EasingName;
   video?: HTMLVideoElement;
   frames?: FrameRenderer;
   smoothingTauMs?: number;

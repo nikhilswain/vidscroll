@@ -48,6 +48,39 @@ import (`import heroUrl from "./hero.mp4"`).
 video stays pinned to the viewport and plays, then the page carries on. Put
 content above and below it, or use several on one page.
 
+### Next.js
+
+vidscroll works in the App Router, including in server components: the package
+is marked `"use client"`, so you can import `ScrollVideo` and `Section` straight
+into a `page.tsx`. Pages still render on the server and hydrate without
+warnings (checked with Next.js 16 and React 19).
+
+Server components can only pass plain data to it, not functions. So:
+
+- Give `easing` by name (`easing="outCubic"`), not as a function.
+- For `onLoad`, `onError`, a `loader` function, or the hooks
+  (`useScrollVideo`, `useScrollVideoState`, `useScrollVideoUpdate`), put them in
+  your own component that starts with `"use client"`:
+
+```tsx
+"use client";
+
+import { ScrollVideo, Section } from "vidscroll";
+
+export function Hero() {
+  return (
+    <ScrollVideo src="/videos/hero.mp4" length="400vh" onLoad={({ source }) => console.log(source)}>
+      <Section start={0} end={1}>
+        <h1>Hello</h1>
+      </Section>
+    </ScrollVideo>
+  );
+}
+```
+
+Then use `<Hero />` from any page. Put videos in `public/` and refer to them
+from the site root (`/videos/hero.mp4`).
+
 ## Using your video
 
 There are two ways. Both scrub smoothly; they differ only in what happens on
@@ -210,7 +243,7 @@ owners download their uploads) and host the file yourself.
 | `optimize` | `true` | Re-encode slow-to-seek videos in the browser. `false` to disable, or an object: `maxKeyframeGap` (s, default 0.5), `maxResolution` (short side, default 720), `maxFps` (default 30; 15 for videos over 2 min), `cache` (default true), `wait` (default false: scrub the original while re-encoding; true: show the loader until the re-encoded copy is ready) |
 | `smoothScroll` | `false` | Eased mouse-wheel scrolling for the page. `true` or `{ tau, wheelMultiplier }` |
 | `fit` | `"cover"` | `"cover"` fills the stage and crops; `"contain"` shows the whole frame |
-| `easing` | linear | `(t) => t` curve from scroll progress to video time; see `easing` export |
+| `easing` | `"none"` | Curve from scroll progress to video time: a preset name or a function `(t) => t`. See [Easing](#easing). Use a name in Next.js server components, which can't pass functions |
 | `poster` | first frame | Shown while loading. By default the video's first frame is fetched and shown behind the loader; pass an image URL instead, or `false` for none |
 | `loader` | built-in | `false`, a React node, or `(state, builtIn) => node` with state `{ phase, progress, background, error }` and `builtIn` the default loader for that state. The default is a translucent overlay, and a small corner badge while a raw video is scrollable but still re-encoding. See [Loader states](#loader-states) |
 | `onLoad` | | `({ source, probe }) => void`, called once the final video is known. `source` is `"original"`, `"optimized"`, `"cache"` or `"stream"` |
@@ -225,6 +258,51 @@ owners download their uploads) and host the file yourself.
 Set `length` explicitly when there's content below the video: with
 `"auto"`, the block only knows its height once the video's duration has
 loaded, so content below it moves down at that point.
+
+### Easing
+
+By default, scrolling and the video move in step: half the scroll shows half
+the video. `easing` reshapes that, so some parts of the video take more
+scrolling and others less:
+
+```tsx
+<ScrollVideo src="/hero.mp4" easing="inOutSine" />
+<ScrollVideo src="/hero.mp4" easing={(t) => t * t} />
+```
+
+| Name | Feel | Fastest point | Half the scroll shows |
+| --- | --- | --- | --- |
+| `"none"` (default) | Even pace | 1x everywhere | 50% of the video |
+| `"inOutSine"` | Gentle start and end | 1.6x in the middle | 50% |
+| `"inOutQuad"` | Clear start and end | 2x in the middle | 50% |
+| `"inOutCubic"` | Strong start and end | 3x in the middle | 50% |
+| `"inQuad"` / `"inCubic"` | Slow start, speeds up | 2x / 3x at the end | 25% / 13% |
+| `"outQuad"` / `"outCubic"` | Fast start, slows down | 2x / 3x at the start | 75% / 88% |
+
+What it changes:
+
+- **Speed.** At its fastest point, a curve moves the video that many times
+  faster per scroll than `"none"`. Faster means bigger jumps between frames
+  when someone scrolls quickly, most visibly on phones. `"inOutSine"` is the
+  gentlest choice. Prefer it, or a Quad curve, for long videos.
+- **Flat ends.** Every curve except `"none"` slows to almost nothing at one
+  or both ends, so the first or last bit of scrolling barely moves the
+  video. That suits holding an opening or closing shot, but it can feel stuck
+  if the shot is static.
+- **Sections.** `start`/`end` are positions in the scroll, so easing doesn't
+  move them. `fromTime`/`toTime` and `fromFrame`/`toFrame` follow the video
+  through the curve, so a caption timed to seconds 20–25 shows exactly while
+  those seconds are on screen. `scrollToTime` goes through the curve the same
+  way.
+- **Progress values.** `--video-progress`, `useScrollVideoState().progress` and
+  `linearProgress` are the scroll position. `time` is the eased video time.
+- **Length.** `length="auto"` counts the whole video (40vh per second) and
+  ignores the curve.
+
+A custom function receives the scroll progress `t` from 0 to 1 and returns
+the video position from 0 to 1. It must start at 0, end at 1 and never go
+backwards. The presets are also exported as `easing`, with their names typed
+as `EasingName`.
 
 ### Loader states
 
@@ -551,6 +629,7 @@ Everything is typed. Besides the component props (`ScrollVideoProps`,
 | `LoaderState` | Argument of a `loader` function |
 | `VidscrollError`, `VidscrollErrorCode` | Errors passed to `onError` (`unsupported-url`, `http-error`, `not-a-video`, `unplayable`) |
 | `OptimizeOptions`, `SmoothScrollOptions`, `ScrollToOptions` | Option objects |
+| `EasingName` | Names accepted by `easing` (`"none"`, `"inOutSine"`, `"outCubic"`, …) |
 
 ## Guidance
 

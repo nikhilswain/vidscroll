@@ -44,3 +44,20 @@ describe("ScrollVideo loader", () => {
     expect(container.querySelector("[data-vidscroll-loader]")).toBeNull();
   });
 });
+
+describe("ScrollVideo easing", () => {
+  it("warns once about an unknown easing name", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    act(() =>
+      root.render(
+        createElement(ScrollVideo, {
+          src: "/video.mp4",
+          fullPreload: false,
+          easing: "bouncy" as unknown as "outCubic",
+        })
+      )
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('Unknown easing "bouncy"'));
+    warn.mockRestore();
+  });
+});
