@@ -76,7 +76,10 @@ function deviceLine() {
     /(?:FxiOS|Firefox)\/[\d.]+/.exec(ua)?.[0] ??
     /Version\/[\d.]+.*Safari/.exec(ua)?.[0].replace(/ .*/, " Safari") ??
     "unknown browser";
-  const os = /iPhone OS [\d_]+|iPad|Android [\d.]+|Windows NT [\d.]+|Mac OS X [\d_]+|Linux/.exec(ua)?.[0] ?? "unknown OS";
+  const os =
+    [/Android [\d.]+/, /iPhone OS [\d_]+/, /iPad/, /Windows NT [\d.]+/, /Mac OS X [\d_]+/, /Linux/]
+      .map((pattern) => pattern.exec(ua)?.[0])
+      .find(Boolean) ?? "unknown OS";
   return [
     `${browser}, ${os.replace(/_/g, ".")}`,
     `${navigator.hardwareConcurrency ?? "?"} cores, ${nav.deviceMemory ?? "?"} GB`,

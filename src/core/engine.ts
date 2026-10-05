@@ -370,7 +370,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       stepWarmup();
       return;
     }
-    if (!hasRVFC && frameWaitActive) onFrameDone();
+    if (frameWaitActive) onFrameDone();
   }
 
   function prime() {
