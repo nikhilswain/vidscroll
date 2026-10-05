@@ -178,6 +178,12 @@ When `<ScrollVideo>` loads a video it:
 4. In browsers without WebCodecs, or if re-encoding fails, it uses the original
    and logs a warning.
 
+Once a video scrubs smoothly, scrolling seeks it frame by frame. On Android,
+scrolling forward plays it at the scroll's speed instead, because Android
+shows at most about 30 sought frames per second while forward playback keeps
+up with the screen (measured on a 90 Hz phone: 30 vs 77 frames per second at
+3x speed).
+
 Re-encoding uses the `mediabunny` dependency, which is downloaded only when a
 video actually needs it (about 180 KB gzipped).
 
@@ -546,7 +552,9 @@ with the CLI.
 The automated tests run the demos in Chrome, Firefox and WebKit. The WebKit
 they use (Playwright's Windows build) has no WebCodecs, so there it only runs
 pre-encoded videos, plus a check that an unplayable video shows an error
-instead of loading forever. Real Safari and iOS haven't been tested yet.
+instead of loading forever. On real devices it has been measured on one
+Android phone (Chromium-based Brave), including in-browser re-encoding. Real
+Safari and iOS haven't been tested yet.
 
 If a browser can't play the downloaded copy of a video, vidscroll streams
 the original URL instead. If it can't play or seek that either, the loader
@@ -579,6 +587,13 @@ npm run test:e2e    # browser tests (Playwright) in Chrome, Firefox and WebKit
 The demo imports the library from `src/` directly. Browser tests need Google
 Chrome installed plus `npx playwright install firefox webkit`; they build the
 demo and serve it on port 4173.
+
+To measure playback on a device, add `?stats` to a demo URL (for example
+`/?stats#/sunset`). A panel then shows frames shown per second while
+scrolling, jump size between frames, seek time and load times, with a
+copyable report. `#/lab` runs scripted scrubs that compare seeking, playing
+and WebCodecs-to-canvas on the same device. Open both over HTTPS: browsers
+turn off WebCodecs and Cache Storage on plain-HTTP LAN addresses.
 
 ## Credits
 
