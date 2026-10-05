@@ -40,7 +40,14 @@ const PHASE_TEXT: Record<LoaderState["phase"], string> = {
   error: "",
 };
 
-function Loader({ phase, progress, error }: LoaderState) {
+function Loader({ phase, progress, background, error }: LoaderState) {
+  if (background) {
+    return (
+      <p className="sunset-loader-badge">
+        Smoothing scrubbing <span>{Math.round(progress * 100)}%</span>
+      </p>
+    );
+  }
   return (
     <div className="sunset-loader">
       <p className="sunset-loader__title">A Small Vigil</p>

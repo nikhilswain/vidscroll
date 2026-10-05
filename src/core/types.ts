@@ -8,6 +8,7 @@ export interface EngineOptions {
   frames?: FrameRenderer;
   smoothingTauMs?: number;
   warmup?: boolean | number;
+  preview?: boolean;
   debug?: boolean;
   onDebug?: (info: Record<string, unknown>) => void;
 }
@@ -68,6 +69,7 @@ export interface EngineAPI {
   getState(): EngineStateSnapshot;
   isReady(): boolean;
   notifyReady(): void;
+  swapVideo(next: HTMLVideoElement): Promise<void>;
   on<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>): void;
   off<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>): void;
   registerSection(desc: SectionDescriptor): void;

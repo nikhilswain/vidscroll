@@ -38,6 +38,12 @@ async function settledTime(page: Page, index = 0) {
   }, index);
 }
 
+const landedTime = (page: Page, index = 0) =>
+  page.evaluate((i) => {
+    const video = document.querySelectorAll<HTMLVideoElement>("[data-vidscroll] video")[i];
+    return video.seeking ? NaN : video.currentTime;
+  }, index);
+
 const stageTop = (page: Page, index = 0) =>
   page.evaluate((i) => {
     const block = document.querySelectorAll("[data-vidscroll]")[i];
@@ -69,6 +75,53 @@ test("a scroll video pins inside a page and plays only while scrolled through", 
   expect(await stageTop(page)).toBeLessThan(0);
   expect(await settledTime(page, 1)).toBeGreaterThan(29.5);
   expect(await settledTime(page, 0)).toBeGreaterThan(59.5);
+});
+
+test("a raw video scrubs right away, then switches to the optimized copy in place", async ({ page, browserName }) => {
+  test.skip(browserName === "webkit", RAW_VIDEO_NEEDS_WEBCODECS);
+  await page.goto("/#/basics");
+  await expect(page.locator("[data-vidscroll-loader][data-background]")).toBeVisible({ timeout: 60_000 });
+  const videoSrc = () => page.locator("[data-vidscroll-media]:not([data-vidscroll-next])").first().getAttribute("src");
+  const original = await videoSrc();
+
+  await scrollBlock(page, 0.5);
+  await expect.poll(() => landedTime(page), { timeout: 30_000 }).toBeCloseTo(30, 0);
+  expect(await activeSections(page)).toContain("Middle");
+
+  const forward = await page.evaluate(async () => {
+    const block = document.querySelector<HTMLElement>("[data-vidscroll]")!;
+    const stage = block.querySelector<HTMLElement>("[data-vidscroll-stage]")!;
+    const video = stage.querySelector("video")!;
+    const top = block.getBoundingClientRect().top + scrollY;
+    const travel = block.offsetHeight - stage.offsetHeight;
+    let plays = 0;
+    let seeks = 0;
+    const onPlay = () => plays++;
+    const onSeek = () => seeks++;
+    video.addEventListener("play", onPlay);
+    video.addEventListener("seeking", onSeek);
+    const start = performance.now();
+    await new Promise<void>((done) => {
+      const step = (now: number) => {
+        const k = Math.min(1, (now - start) / 2000);
+        scrollTo({ top: top + (0.5 + 0.05 * k) * travel, behavior: "instant" });
+        if (k < 1) requestAnimationFrame(step);
+        else done();
+      };
+      requestAnimationFrame(step);
+    });
+    video.removeEventListener("play", onPlay);
+    video.removeEventListener("seeking", onSeek);
+    return { plays, seeks };
+  });
+  expect(forward.plays).toBeGreaterThan(0);
+  expect(forward.seeks).toBe(0);
+
+  await expect(page.locator("[data-vidscroll-loader]")).toHaveCount(0, { timeout: 120_000 });
+  expect(await videoSrc()).not.toBe(original);
+  await expect(page.locator("[data-vidscroll-next]")).toHaveCount(0);
+  expect(await settledTime(page)).toBeCloseTo(33, 0);
+  expect(await activeSections(page)).toContain("Middle");
 });
 
 test("poem lines reveal and dissolve one by one with --progress", async ({ page, browserName }) => {

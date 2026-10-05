@@ -12,6 +12,7 @@ export interface OptimizeOptions {
   maxResolution?: number;
   maxFps?: number;
   cache?: boolean;
+  wait?: boolean;
 }
 
 export type LoadPhase = "download" | "optimize";
@@ -19,6 +20,7 @@ export type LoadPhase = "download" | "optimize";
 export interface LoadVideoOptions {
   optimize?: boolean | OptimizeOptions;
   onProgress?: (phase: LoadPhase, value: number) => void;
+  onPreview?: (original: LoadedVideo) => void;
   signal?: AbortSignal;
 }
 
@@ -164,6 +166,8 @@ export async function loadScrollVideo(
     `[vidscroll] "${src}" isn't encoded for scrubbing (${gapText}); ` +
       `re-encoding it in the browser. ${ENCODE_HINT}`
   );
+  const preview = opts.onPreview ? objectUrlResult(blob, "original", probe) : null;
+  if (preview) opts.onPreview?.(preview);
   onProgress?.("optimize", 0);
   let optimized: Blob;
   try {
@@ -180,7 +184,7 @@ export async function loadScrollVideo(
       `[vidscroll] Re-encoding "${src}" failed (${(err as Error).message}); ` +
         `using the original. ${ENCODE_HINT}`
     );
-    return objectUrlResult(blob, "original", probe);
+    return preview ?? objectUrlResult(blob, "original", probe);
   }
   aborted(signal);
   onProgress?.("optimize", 1);

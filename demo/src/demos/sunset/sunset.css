@@ -132,6 +132,17 @@
   font-family: var(--sans);
 }
 
+.sunset-loader-badge {
+  color: var(--cream);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sunset-loader-badge span {
+  opacity: 0.7;
+}
+
 .sunset-loader__title {
   font-family: var(--serif);
   font-style: italic;

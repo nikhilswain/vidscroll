@@ -22,12 +22,23 @@ const PRIME_MIN_SAMPLES = 3;
 const PRIME_TIMEOUT_MS = 600;
 const WARMUP_STEP_TIMEOUT_MS = 1000;
 const SEEK_STALL_MS = 1000;
+const PREVIEW_SEEK_STALL_MS = 5000;
+const SWAP_TOLERANCE_S = 0.1;
+const PLAY_MAX_LEAD_S = 4;
+const PLAY_MAX_OVERSHOOT_S = 0.15;
+const PLAY_CLOSE_ENOUGH_S = 0.02;
+const PLAY_CATCH_UP_S = 0.05;
+const PLAY_MIN_RATE = 0.1;
+const PLAY_MAX_RATE = 16;
+const TARGET_AT_REST = 0.05;
+const SWAP_MAX_SEEKS = 3;
 
 type RVFCMeta = { mediaTime: number; presentedFrames: number };
 type VideoWithRVFC = HTMLVideoElement & {
   requestVideoFrameCallback?: (
     cb: (now: number, meta: RVFCMeta) => void
   ) => number;
+  cancelVideoFrameCallback?: (handle: number) => void;
 };
 
 type ListenerSets = { [K in EngineEvent]: Set<EngineEventHandler<K>> };
@@ -38,18 +49,19 @@ export function createEngine(options: EngineOptions): EngineAPI {
   const lengthOpt = options.length ?? "auto";
   const easingFn = options.easing || ((t: number) => t);
   const tauMs = options.smoothingTauMs ?? DEFAULT_TAU_MS;
-  const warmupEnabled = options.warmup !== false;
+  let preview = options.preview === true;
+  const warmupEnabled = options.warmup !== false && !preview;
   const warmupStepsOpt = typeof options.warmup === "number" ? options.warmup : 0;
   const debug = options.debug === true;
   const debugCb = options.onDebug;
 
   const frames = options.frames ?? null;
   const framesMode = frames != null;
-  const videoEl = options.video ?? null;
+  let videoEl = options.video ?? null;
   if (!videoEl && !frames)
     throw new Error("Engine requires a video element or a frame renderer");
-  const vWith = (videoEl ?? undefined) as VideoWithRVFC | undefined;
-  const hasRVFC = typeof vWith?.requestVideoFrameCallback === "function";
+  const rvfcVideo = () => videoEl as VideoWithRVFC;
+  const hasRVFC = typeof (videoEl as VideoWithRVFC | null)?.requestVideoFrameCallback === "function";
 
   let fps = options.fps ?? DEFAULT_FPS;
   let duration = 0;
@@ -66,8 +78,15 @@ export function createEngine(options: EngineOptions): EngineAPI {
   let seekInFlight = false;
   let requestedTime = NaN;
   let requestedAt = 0;
+  let nextSeekAt = 0;
+  let playing = false;
+  let playBlocked = false;
+  let lastTargetTime = NaN;
+  let targetVelocity = 0;
   let frameWaitActive = false;
   let frameWaitTimeoutId = 0;
+  let frameWaitHandle = 0;
+  let cancelSwap: (() => void) | null = null;
 
   let readyEmitted = false;
 
@@ -235,10 +254,17 @@ export function createEngine(options: EngineOptions): EngineAPI {
     updateSections();
     emit("update", { ...state });
 
+    const step = Number.isNaN(lastTargetTime) ? 0 : targetTime - lastTargetTime;
+    lastTargetTime = targetTime;
+    targetVelocity += (step / (dt / 1000) - targetVelocity) * 0.3;
+
     const seeking = videoEl!.seeking;
-    const stalled = seeking && now - requestedAt > SEEK_STALL_MS;
+    const followedByPlaying =
+      preview && !playBlocked && !priming && !warming && !seekInFlight && !seeking && playToward(targetTime);
+    const stalled = seeking && now - requestedAt > (preview ? PREVIEW_SEEK_STALL_MS : SEEK_STALL_MS);
     const newTarget = !(Math.abs(requestedTime - targetTime) <= TIME_EPSILON_S);
-    if (!priming && !warming && !seekInFlight && (stalled || (!seeking && newTarget))) {
+    const rested = now >= nextSeekAt || Math.abs(targetVelocity) < TARGET_AT_REST;
+    if (!followedByPlaying && !priming && !warming && !seekInFlight && rested && (stalled || (!seeking && newTarget))) {
       seekInFlight = true;
       requestedTime = targetTime;
       requestedAt = now;
@@ -248,7 +274,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     }
 
     const settled =
-      smoothedProgress === targetProgress && !seekInFlight && !seeking && !newTarget;
+      smoothedProgress === targetProgress && !seekInFlight && !seeking && !newTarget && !playing;
     if (settled) {
       lastTickTime = 0;
       return;
@@ -256,16 +282,56 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (!seekInFlight) requestTick();
   }
 
+  function playToward(targetTime: number) {
+    const video = videoEl!;
+    const lead = targetTime - video.currentTime;
+    if (lead > PLAY_MAX_LEAD_S || lead < -PLAY_MAX_OVERSHOOT_S) {
+      stopPlaying();
+      return false;
+    }
+    if (lead <= PLAY_CLOSE_ENOUGH_S) {
+      stopPlaying();
+      requestedTime = targetTime;
+      return true;
+    }
+    const rate = Math.min(
+      PLAY_MAX_RATE,
+      lead / PLAY_CATCH_UP_S,
+      Math.max(PLAY_MIN_RATE, targetVelocity + lead * 2)
+    );
+    if (Math.abs(video.playbackRate - rate) > 0.05) video.playbackRate = rate;
+    if (!playing) {
+      playing = true;
+      requestedTime = NaN;
+      video.play().catch((err: Error) => {
+        if (err.name === "AbortError") return;
+        playBlocked = true;
+        playing = false;
+        debugLog("play-blocked", {});
+        requestTick();
+      });
+    }
+    return true;
+  }
+
+  function stopPlaying() {
+    if (!playing) return;
+    playing = false;
+    videoEl!.pause();
+    videoEl!.playbackRate = 1;
+  }
+
   function armFrameWait() {
     if (frameWaitActive) return;
     frameWaitActive = true;
-    if (hasRVFC && vWith) vWith.requestVideoFrameCallback!(onFrameDone);
+    if (hasRVFC) frameWaitHandle = rvfcVideo().requestVideoFrameCallback!(onFrameDone);
     frameWaitTimeoutId = window.setTimeout(onFrameDone, FRAME_WAIT_TIMEOUT_MS);
   }
 
   function onFrameDone() {
     if (!frameWaitActive) return;
     frameWaitActive = false;
+    frameWaitHandle = 0;
     if (frameWaitTimeoutId) {
       clearTimeout(frameWaitTimeoutId);
       frameWaitTimeoutId = 0;
@@ -276,6 +342,10 @@ export function createEngine(options: EngineOptions): EngineAPI {
 
   function onSeeked() {
     if (destroyed) return;
+    if (preview) {
+      const now = performance.now();
+      nextSeekAt = now + (now - requestedAt);
+    }
     if (warming) {
       warmupIndex++;
       stepWarmup();
@@ -290,7 +360,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     priming = true;
     primeSamples = [];
     lastPrimeMediaTime = -1;
-    if (hasRVFC && vWith) vWith.requestVideoFrameCallback!(onPrimeFrame);
+    if (hasRVFC) rvfcVideo().requestVideoFrameCallback!(onPrimeFrame);
     primeTimeoutId = window.setTimeout(finishPrime, PRIME_TIMEOUT_MS);
     videoEl.play().catch(() => finishPrime());
   }
@@ -303,7 +373,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     }
     lastPrimeMediaTime = meta.mediaTime;
     if (primeSamples.length >= PRIME_MAX_SAMPLES) return finishPrime();
-    if (vWith) vWith.requestVideoFrameCallback!(onPrimeFrame);
+    rvfcVideo().requestVideoFrameCallback!(onPrimeFrame);
   }
 
   function finishPrime() {
@@ -422,6 +492,61 @@ export function createEngine(options: EngineOptions): EngineAPI {
     requestTick();
   }
 
+  function swapVideo(next: HTMLVideoElement): Promise<void> {
+    cancelSwap?.();
+    return new Promise<void>((resolve, reject) => {
+      if (destroyed || !videoEl || !readyEmitted) return reject(new Error("the engine isn't ready"));
+      if (next.error) return reject(new Error(next.error.message || "the video failed to load"));
+      let seeks = 0;
+      const finish = (err?: Error) => {
+        next.removeEventListener("loadedmetadata", seekNext);
+        next.removeEventListener("seeked", onNextSeeked);
+        next.removeEventListener("error", onNextError);
+        cancelSwap = null;
+        if (err) reject(err);
+        else resolve();
+      };
+      const target = () => Math.min(state.time, next.duration || state.time);
+      const seekNext = () => {
+        seeks++;
+        next.currentTime = target();
+      };
+      const onNextSeeked = () => {
+        if (Math.abs(next.currentTime - target()) > SWAP_TOLERANCE_S && seeks < SWAP_MAX_SEEKS) return seekNext();
+        attachVideo(next);
+        finish();
+      };
+      const onNextError = () => finish(new Error(next.error?.message || "the video failed to load"));
+      cancelSwap = () => finish(new Error("the swap was cancelled"));
+      next.addEventListener("seeked", onNextSeeked);
+      next.addEventListener("error", onNextError);
+      if (next.readyState >= 1) seekNext();
+      else next.addEventListener("loadedmetadata", seekNext, { once: true });
+    });
+  }
+
+  function attachVideo(next: HTMLVideoElement) {
+    const prev = videoEl!;
+    prev.removeEventListener("loadedmetadata", onMetadata);
+    prev.removeEventListener("seeked", onSeeked);
+    if (frameWaitHandle) (prev as VideoWithRVFC).cancelVideoFrameCallback?.(frameWaitHandle);
+    stopPlaying();
+    prev.pause();
+    prev.playbackRate = 1;
+    videoEl = next;
+    next.addEventListener("loadedmetadata", onMetadata);
+    next.addEventListener("seeked", onSeeked);
+    preview = false;
+    nextSeekAt = 0;
+    onFrameDone();
+    requestedTime = next.currentTime;
+    requestedAt = performance.now();
+    recomputeDerived();
+    readScrollIntoTarget();
+    requestTick();
+    debugLog("swap", { time: next.currentTime, duration });
+  }
+
   function removeListeners() {
     if (videoEl) {
       videoEl.removeEventListener("loadedmetadata", onMetadata);
@@ -439,6 +564,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       if (frameWaitTimeoutId) clearTimeout(frameWaitTimeoutId);
       if (primeTimeoutId) clearTimeout(primeTimeoutId);
       clearTimeout(warmupTimeoutId);
+      cancelSwap?.();
       priming = false;
       removeListeners();
       if (videoEl) {
@@ -453,6 +579,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     getState() {
       return { ...state };
     },
+    swapVideo,
     isReady() {
       return readyEmitted;
     },

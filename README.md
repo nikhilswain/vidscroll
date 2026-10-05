@@ -6,7 +6,8 @@ text sections that fade in and out along the way.
 - **Smooth on any video file.** Most exported videos have keyframes several
   seconds apart, which makes every seek slow. vidscroll detects that and
   re-encodes the video in the browser (WebCodecs) on the first visit, then
-  caches the result. Later visits load instantly.
+  caches the result. Visitors can scroll the video while that runs, and later
+  visits load instantly.
 - **Or skip the wait:** `npx vidscroll encode hero.mp4` prepares the file ahead
   of time.
 - Clear errors for things that can't work, like YouTube links or a wrong path.
@@ -55,7 +56,7 @@ a visitor's **first** visit.
 | | Option 1: raw video | Option 2: prepare with the CLI |
 | --- | --- | --- |
 | Setup | None | Run one command per video |
-| First visit | Wait while the browser re-encodes it (about 10 s for a 60 s 1080p clip on a desktop; longer on phones) | Just the download |
+| First visit | Scrubs right away: smooth scrolling forward, choppy scrolling back, until the browser has re-encoded it (about 10 s for a 60 s 1080p clip on a desktop; longer on phones) | Just the download |
 | Later visits | Instant (cached) | Instant |
 | Best for | Trying things out, user-uploaded videos | Production sites |
 
@@ -68,8 +69,15 @@ Pass its URL. That's all:
 ```
 
 If the video isn't encoded for scrubbing (most exports aren't), vidscroll
-re-encodes it in the browser behind a progress bar and caches the result. The
-browser console shows a hint like this. It's a suggestion, not an error:
+re-encodes it in the browser and caches the result. Meanwhile the original is
+already on screen, with a small "Optimizing video" badge in the corner.
+Scrolling forward plays it smoothly. Scrolling back jumps a few frames per
+second, because a video can only play forwards. When the re-encoded copy is
+ready it takes over at the same frame, and scrubbing turns smooth both ways. To
+keep the video hidden behind a progress bar until then instead, pass
+`optimize={{ wait: true }}`.
+
+The browser console shows a hint like this. It's a suggestion, not an error:
 
 ```
 [vidscroll] "/videos/hero.mp4" isn't encoded for scrubbing (keyframes are up
@@ -158,7 +166,15 @@ When `<ScrollVideo>` loads a video it:
 2. Uses it as-is if keyframes are at most 0.5 s apart.
 3. Otherwise re-encodes it in the browser (720p, a keyframe every 0.25 s, no
    audio) with WebCodecs, and saves the result in Cache Storage. The cached
-   copy is reused until the source file changes.
+   copy is reused until the source file changes. While it re-encodes, the
+   original stays on screen. Scrolling forward plays it, with the playback
+   speed following the scroll speed (up to 16x). Scrolling back, or jumping
+   further than playback can catch up, seeks instead. While scrolling
+   continues, each seek is followed by a pause as long as the seek took, so
+   the decoder stays free for the re-encode. When the re-encoded copy is ready,
+   it's loaded into a second `<video>` underneath, seeked to the current frame,
+   and swapped in. If the browser refuses to play the video (as iOS does in
+   Low Power Mode), it seeks for both directions instead.
 4. In browsers without WebCodecs, or if re-encoding fails, it uses the original
    and logs a warning.
 
@@ -185,13 +201,13 @@ owners download their uploads) and host the file yourself.
 | --- | --- | --- |
 | `src` | required | Video file URL |
 | `length` | `"auto"` | How much scrolling plays the whole video: `"400vh"`, `"2000px"` or a number of px. `"auto"` is 40vh per second of video |
-| `optimize` | `true` | Re-encode slow-to-seek videos in the browser. `false` to disable, or an object: `maxKeyframeGap` (s, default 0.5), `maxResolution` (short side, default 720), `maxFps` (default 30; 15 for videos over 2 min), `cache` (default true) |
+| `optimize` | `true` | Re-encode slow-to-seek videos in the browser. `false` to disable, or an object: `maxKeyframeGap` (s, default 0.5), `maxResolution` (short side, default 720), `maxFps` (default 30; 15 for videos over 2 min), `cache` (default true), `wait` (default false: scrub the original while re-encoding; true: show the loader until the re-encoded copy is ready) |
 | `smoothScroll` | `false` | Eased mouse-wheel scrolling for the page. `true` or `{ tau, wheelMultiplier }` |
 | `fit` | `"cover"` | `"cover"` fills the stage and crops; `"contain"` shows the whole frame |
 | `easing` | linear | `(t) => t` curve from scroll progress to video time; see `easing` export |
 | `poster` | first frame | Shown while loading. By default the video's first frame is fetched and shown behind the loader; pass an image URL instead, or `false` for none |
 | `loader` | built-in | `false`, a React node, or `(state) => node` with `{ phase, progress, error }`. The default is a translucent overlay |
-| `onLoad` | | `({ source, probe }) => void`. `source` is `"original"`, `"optimized"`, `"cache"` or `"stream"` |
+| `onLoad` | | `({ source, probe }) => void`, called once the final video is known. `source` is `"original"`, `"optimized"`, `"cache"` or `"stream"` |
 | `onError` | | `(error) => void`. Errors are `VidscrollError` with a `code` |
 | `fullPreload` | `true` | `false` streams the URL directly and skips optimization |
 | `className`, `style` | | Applied to the outer block |
@@ -209,13 +225,22 @@ loaded, so content below it moves down at that point.
 ```tsx
 <ScrollVideo
   src="/hero.mp4"
-  loader={({ phase, progress, error }) =>
-    error ? <p>{error.message}</p> : <Spinner label={phase} value={progress} />
+  loader={({ phase, progress, background, error }) =>
+    error ? <p>{error.message}</p>
+    : background ? <small>Smoothing {Math.round(progress * 100)}%</small>
+    : <Spinner label={phase} value={progress} />
   }
 />
 ```
 
 `phase` is `"download"`, `"optimize"`, `"preparing"`, or `"error"`.
+
+`background` is `true` while a raw video is already scrubbable and the
+re-encode carries on behind it. The loader element then sits in the bottom-right
+corner (`[data-vidscroll-loader][data-background]`) instead of covering the
+video, so return something small, or `null` to show nothing. A loader passed
+as a plain node rather than a function is shown only while the video is
+covered.
 
 ## `<Section>` props
 
@@ -243,7 +268,7 @@ without `!important`. The defaults:
 | `[data-vidscroll-stage]` | Pinned viewport-sized stage (`position: sticky`) |
 | `[data-vidscroll-media]` | The `<video>` |
 | `[data-vidscroll-section]` | Each section; `[data-active]` while active |
-| `[data-vidscroll-loader]` | Loading overlay |
+| `[data-vidscroll-loader]` | Loading overlay; `[data-phase]` holds the phase, `[data-background]` marks the corner badge |
 
 For example, a slower fade that also slides up:
 
