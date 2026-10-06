@@ -1,0 +1,21 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+import { withBase } from "../lib/url";
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

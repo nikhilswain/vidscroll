@@ -25,6 +25,8 @@ dist-ssr
 
 # Build output
 dist-demo
+dist-site
+site/.astro
 *.tgz
 test-results
 playwright-report
