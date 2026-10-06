@@ -254,7 +254,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (!framesMode && duration <= 0) return;
 
     const waking = lastTickTime === 0;
-    const dt = waking ? 16.7 : Math.min(now - lastTickTime, MAX_TICK_DT_MS);
+    const dt = waking ? 16.7 : Math.min(Math.max(now - lastTickTime, 1), MAX_TICK_DT_MS);
     lastTickTime = now;
     const alpha = 1 - Math.exp(-dt / smoothingTau(dt, waking));
     smoothedProgress += (targetProgress - smoothedProgress) * alpha;
@@ -485,7 +485,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     const newlyActive: string[] = [];
     sections.forEach((sec) => {
       const p = state.linearProgress;
-      const active = p >= sec.start && (p < sec.end || (sec.end >= 1 && p >= 1));
+      const active = !sec.pending && p >= sec.start && (p < sec.end || (sec.end >= 1 && p >= 1));
       if (active && !sec._active) {
         sec._active = true;
         emit("sectionEnter", { id: sec.id, state: { ...state } });
@@ -518,7 +518,10 @@ export function createEngine(options: EngineOptions): EngineAPI {
     start = Math.min(Math.max(start, 0), 1);
     end = Math.min(Math.max(end, 0), 1);
     if (end <= start) end = Math.min(1, start + 0.0001);
-    return { id: desc.id, start, end, data: desc.data };
+    const placedInVideo =
+      desc.fromTime != null || desc.toTime != null || desc.fromFrame != null || desc.toFrame != null;
+    const pending = !framesMode && duration <= 0 && placedInVideo;
+    return { id: desc.id, start, end, data: desc.data, pending };
   }
 
   function onMetadata() {
@@ -662,7 +665,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     },
     getSectionProgress(id: string) {
       const sec = sections.get(id);
-      if (!sec) return 0;
+      if (!sec || sec.pending) return 0;
       const t = (state.linearProgress - sec.start) / (sec.end - sec.start);
       return Math.min(Math.max(t, 0), 1);
     },

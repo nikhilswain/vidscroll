@@ -21,16 +21,19 @@ async function scrollBlock(page: Page, progress: number, index = 0) {
 
 async function settledTime(page: Page, index = 0) {
   return page.evaluate(async (i) => {
-    const video = document.querySelectorAll<HTMLVideoElement>("[data-vidscroll] video")[i];
+    const current = () => document.querySelectorAll<HTMLVideoElement>("[data-vidscroll] video")[i];
+    const quietMs = () => (document.querySelector("[data-vidscroll-loader][data-background]") ? 2500 : 600);
+    let video = current();
     let last = -1;
     let stableSince = performance.now();
     const start = performance.now();
     while (performance.now() - start < 15_000) {
       await new Promise((r) => setTimeout(r, 50));
+      video = current();
       if (video.currentTime !== last) {
         last = video.currentTime;
         stableSince = performance.now();
-      } else if (!video.seeking && performance.now() - stableSince > 600) {
+      } else if (!video.seeking && performance.now() - stableSince > quietMs()) {
         break;
       }
     }
@@ -121,7 +124,7 @@ test("a raw video scrubs right away, then switches to the optimized copy in plac
   expect(forward.plays, JSON.stringify({ ...forward, warnings })).toBeGreaterThan(0);
 
   await expect(page.locator("[data-vidscroll-loader]")).toHaveCount(0, { timeout: 120_000 });
-  expect(await videoSrc()).not.toBe(original);
+  expect(await videoSrc(), JSON.stringify(warnings)).not.toBe(original);
   await expect(page.locator("[data-vidscroll-next]")).toHaveCount(0);
   expect(await settledTime(page)).toBeCloseTo(33, 0);
   expect(await activeSections(page)).toContain("Middle");

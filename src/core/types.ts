@@ -40,6 +40,7 @@ export interface NormalizedSection {
   start: number;
   end: number;
   data?: unknown;
+  pending?: boolean;
   _active?: boolean;
 }
 

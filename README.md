@@ -360,7 +360,8 @@ wrapped in `:where()` so they have zero specificity: any CSS you write wins,
 without `!important`. The defaults:
 
 - A section covers the video, centres its content, and fades in over 0.4 s
-  while active.
+  while active. While active, its content (its direct children) takes clicks;
+  its empty area lets them through to whatever is underneath.
 - Elements expose their state as attributes you can target:
 
 | Selector | Element |
