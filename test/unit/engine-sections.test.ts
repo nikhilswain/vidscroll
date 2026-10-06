@@ -12,6 +12,7 @@ afterEach(() => {
 
 function setup() {
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
   const container = document.createElement("div");
   const video = document.createElement("video");
   container.append(video);
