@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { EngineAPI, EngineStateSnapshot } from "../core/types";
+import { bindProgressVariable } from "../core/controller";
 import { useEngine } from "./context";
 
 export function useScrollVideoUpdate(callback: (state: EngineStateSnapshot) => void) {
@@ -69,14 +70,6 @@ export function useVideoProgressVariable(api: EngineAPI | null, target: { curren
   useEffect(() => {
     const el = target.current;
     if (!api || !el) return;
-    let last = -1;
-    const apply = (s: EngineStateSnapshot) => {
-      if (Math.abs(s.linearProgress - last) < 0.0001) return;
-      last = s.linearProgress;
-      el.style.setProperty("--video-progress", s.linearProgress.toFixed(4));
-    };
-    apply(api.getState());
-    api.on("update", apply);
-    return () => api.off("update", apply);
+    return bindProgressVariable(api, el);
   }, [api, target]);
 }
