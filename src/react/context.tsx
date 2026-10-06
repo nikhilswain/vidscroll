@@ -1,8 +1,8 @@
 import { createContext, useContext } from "react";
-import type { EngineAPI, ScrollVideoApi } from "../core/types";
+import type { ScrollVideoApi } from "../core/types";
 
 export interface ScrollVideoContextValue {
-  api: EngineAPI | null;
+  api: ScrollVideoApi | null;
 }
 
 export const ScrollVideoContext = createContext<ScrollVideoContextValue>({ api: null });

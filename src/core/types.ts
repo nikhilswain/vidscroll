@@ -74,8 +74,8 @@ export interface EngineAPI {
   swapVideo(next: HTMLVideoElement): Promise<void>;
   on<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>): void;
   off<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>): void;
-  registerSection(desc: SectionDescriptor): void;
-  unregisterSection(id: string): void;
+  addSection(desc: SectionDescriptor): void;
+  removeSection(id: string): void;
   getSectionProgress(id: string): number;
   scrollToProgress(progress: number, opts?: ScrollToOptionsLite): void;
   scrollToTime(seconds: number, opts?: ScrollToOptionsLite): void;
@@ -83,5 +83,13 @@ export interface EngineAPI {
 
 export type ScrollVideoApi = Pick<
   EngineAPI,
-  "on" | "off" | "getState" | "isReady" | "scrollToTime" | "scrollToProgress" | "getSectionProgress"
+  | "on"
+  | "off"
+  | "getState"
+  | "isReady"
+  | "scrollToTime"
+  | "scrollToProgress"
+  | "getSectionProgress"
+  | "addSection"
+  | "removeSection"
 >;

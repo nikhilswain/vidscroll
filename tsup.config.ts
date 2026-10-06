@@ -1,13 +1,12 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: { index: "src/index.ts", core: "src/core/index.ts" },
   format: ["esm"],
   dts: true,
   tsconfig: "tsconfig.app.json",
   sourcemap: true,
   clean: true,
   target: "es2020",
-  banner: { js: '"use client";' },
   external: ["react", "mediabunny"],
 });

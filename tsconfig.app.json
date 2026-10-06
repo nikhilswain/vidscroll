@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "paths": { "vidscroll": ["./src/index.ts"] }
+    "paths": { "vidscroll": ["./src/index.ts"], "vidscroll/core": ["./src/core/index.ts"] }
   },
   "include": ["src", "demo/src"]
 }

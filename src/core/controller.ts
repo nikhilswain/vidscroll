@@ -4,7 +4,16 @@ import type { LoadPhase, LoadedVideo, OptimizeOptions } from "./load";
 import { acquireSmoothScroll } from "./smoothScroll";
 import type { SmoothScrollOptions } from "./smoothScroll";
 import { VidscrollError, checkSourceUrl, warnOnce } from "./source";
-import type { EngineAPI, EngineOptions, EngineStateSnapshot } from "./types";
+import type {
+  EngineAPI,
+  EngineEvent,
+  EngineEventMap,
+  EngineOptions,
+  EngineStateSnapshot,
+  ScrollToOptionsLite,
+  ScrollVideoApi,
+  SectionDescriptor,
+} from "./types";
 
 export interface LoaderState {
   phase: "download" | "optimize" | "preparing" | "error";
@@ -25,15 +34,17 @@ export interface ScrollVideoOptions
   poster?: string | false;
 }
 
-export interface ScrollVideoView {
-  engine: EngineAPI | null;
+export interface ScrollVideoEventMap extends EngineEventMap {
   loader: LoaderState | null;
 }
 
-export interface ScrollVideoController {
+export type ScrollVideoEvent = keyof ScrollVideoEventMap;
+
+export interface ScrollVideoController extends Omit<ScrollVideoApi, "on" | "off"> {
+  on<K extends ScrollVideoEvent>(evt: K, handler: (payload: ScrollVideoEventMap[K]) => void): void;
+  off<K extends ScrollVideoEvent>(evt: K, handler: (payload: ScrollVideoEventMap[K]) => void): void;
+  getLoader(): LoaderState | null;
   update(options: ScrollVideoOptions): void;
-  getView(): ScrollVideoView;
-  subscribe(listener: (view: ScrollVideoView) => void): () => void;
   destroy(): void;
 }
 
@@ -63,6 +74,17 @@ interface SwapRun {
 
 const EMPTY: Slots = { active: null, next: null };
 
+const ENGINE_EVENTS: EngineEvent[] = ["ready", "update", "warmup", "sectionEnter", "sectionExit", "resize"];
+
+const IDLE_STATE: EngineStateSnapshot = {
+  linearProgress: 0,
+  time: 0,
+  frameIndex: 0,
+  totalFrames: 0,
+  duration: 0,
+  activeSections: [],
+};
+
 export const INITIAL_LOADER: LoaderState = { phase: "download", progress: 0, background: false };
 
 export function previewSource(src: string): string | null {
@@ -74,7 +96,7 @@ export function previewSource(src: string): string | null {
   return src.includes("#") ? src : `${src}#t=0.001`;
 }
 
-export function bindProgressVariable(engine: EngineAPI, el: HTMLElement): () => void {
+export function bindProgressVariable(engine: ScrollVideoApi, el: HTMLElement): () => void {
   let last = -1;
   const apply = (s: EngineStateSnapshot) => {
     if (Math.abs(s.linearProgress - last) < 0.0001) return;
@@ -141,8 +163,13 @@ export function createScrollVideo(
   let owned: LoadedVideo[] = [];
   let releaseSmoothScroll: (() => void) | null = null;
   let destroyed = false;
-  let view: ScrollVideoView = { engine: null, loader: INITIAL_LOADER };
-  const listeners = new Set<(view: ScrollVideoView) => void>();
+  let loader: LoaderState | null = INITIAL_LOADER;
+  const sections = new Map<string, SectionDescriptor>();
+  const listeners = new Map<ScrollVideoEvent, Set<(payload: never) => void>>();
+
+  function emit<K extends ScrollVideoEvent>(evt: K, payload: ScrollVideoEventMap[K]) {
+    listeners.get(evt)?.forEach((handler) => (handler as (p: ScrollVideoEventMap[K]) => void)(payload));
+  }
 
   const fit = () => opts.fit ?? "cover";
   const fullPreload = () => opts.fullPreload ?? true;
@@ -230,7 +257,6 @@ export function createScrollVideo(
 
   function syncPreview() {
     const src = previewSource(opts.src);
-    const loader = view.loader;
     const show =
       opts.poster === undefined &&
       fullPreload() &&
@@ -256,20 +282,26 @@ export function createScrollVideo(
 
   function render() {
     if (destroyed) return;
-    const loader = loaderState(error, slots.active != null, ready, warmupProgress, pipeline, slots.next != null);
-    const changed = view.engine !== engine || !sameLoader(view.loader, loader);
-    if (changed) view = { engine, loader: sameLoader(view.loader, loader) ? view.loader : loader };
+    const next = loaderState(error, slots.active != null, ready, warmupProgress, pipeline, slots.next != null);
+    const changed = !sameLoader(loader, next);
+    if (changed) loader = next;
     syncPreview();
-    if (changed) listeners.forEach((listener) => listener(view));
+    if (changed) emit("loader", loader);
   }
 
   function stopEngine() {
+    const previous = engine;
+    if (!previous) return;
     engineCleanup?.();
     engineCleanup = null;
-    engine?.destroy();
+    const wasActive = previous.getState().activeSections;
+    previous.destroy();
     engine = null;
     ready = false;
     warmupProgress = 0;
+    if (destroyed) return;
+    for (const id of wasActive) emit("sectionExit", { id, state: IDLE_STATE });
+    emit("update", IDLE_STATE);
   }
 
   function startEngine() {
@@ -302,13 +334,21 @@ export function createScrollVideo(
     };
     created.on("warmup", onWarmup);
     created.on("ready", onReady);
+    const forwarders = ENGINE_EVENTS.map((evt) => {
+      const forward = (payload: EngineEventMap[typeof evt]) => emit(evt, payload);
+      created.on(evt, forward);
+      return () => created.off(evt, forward);
+    });
     const unbindProgress = bindProgressVariable(created, container);
     engineCleanup = () => {
       created.off("warmup", onWarmup);
       created.off("ready", onReady);
+      forwarders.forEach((off) => off());
       unbindProgress();
     };
+    for (const desc of sections.values()) created.addSection(desc);
     if (created.isReady()) ready = true;
+    emit("update", created.getState());
   }
 
   function setSlots(next: Slots) {
@@ -484,10 +524,32 @@ export function createScrollVideo(
         render();
       }
     },
-    getView: () => view,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+    getLoader: () => loader,
+    on(evt, handler) {
+      let set = listeners.get(evt);
+      if (!set) listeners.set(evt, (set = new Set()));
+      set.add(handler as (payload: never) => void);
+    },
+    off(evt, handler) {
+      listeners.get(evt)?.delete(handler as (payload: never) => void);
+    },
+    getState: () => engine?.getState() ?? { ...IDLE_STATE },
+    isReady: () => engine?.isReady() ?? false,
+    scrollToProgress(progress: number, opts?: ScrollToOptionsLite) {
+      engine?.scrollToProgress(progress, opts);
+    },
+    scrollToTime(seconds: number, opts?: ScrollToOptionsLite) {
+      engine?.scrollToTime(seconds, opts);
+    },
+    getSectionProgress: (id: string) => engine?.getSectionProgress(id) ?? 0,
+    addSection(desc: SectionDescriptor) {
+      if (sections.has(desc.id)) throw new Error(`Section id already exists: ${desc.id}`);
+      sections.set(desc.id, desc);
+      engine?.addSection(desc);
+    },
+    removeSection(id: string) {
+      sections.delete(id);
+      engine?.removeSection(id);
     },
     destroy() {
       if (destroyed) return;

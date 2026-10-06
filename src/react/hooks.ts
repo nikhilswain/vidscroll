@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { EngineAPI, EngineStateSnapshot } from "../core/types";
+import type { EngineStateSnapshot, ScrollVideoApi } from "../core/types";
 import { bindProgressVariable } from "../core/controller";
 import { useEngine } from "./context";
 
@@ -26,7 +26,7 @@ export interface ScrollVideoState {
 
 const IDLE: ScrollVideoState = { ready: false, progress: 0, time: 0, frame: 0, activeSections: [] };
 
-function snapshot(api: EngineAPI | null, state?: EngineStateSnapshot): ScrollVideoState {
+function snapshot(api: ScrollVideoApi | null, state?: EngineStateSnapshot): ScrollVideoState {
   if (!api) return IDLE;
   const s = state ?? api.getState();
   return {
@@ -66,7 +66,7 @@ export function useScrollVideoState(): ScrollVideoState {
   return state;
 }
 
-export function useVideoProgressVariable(api: EngineAPI | null, target: { current: HTMLElement | null }) {
+export function useVideoProgressVariable(api: ScrollVideoApi | null, target: { current: HTMLElement | null }) {
   useEffect(() => {
     const el = target.current;
     if (!api || !el) return;

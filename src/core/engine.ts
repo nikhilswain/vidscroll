@@ -644,7 +644,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
     off<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>) {
       listeners[evt].delete(handler as EngineEventHandler<typeof evt>);
     },
-    registerSection(desc: SectionDescriptor) {
+    addSection(desc: SectionDescriptor) {
       if (sections.has(desc.id))
         throw new Error(`Section id already exists: ${desc.id}`);
       sectionDescs.set(desc.id, desc);
@@ -666,7 +666,7 @@ export function createEngine(options: EngineOptions): EngineAPI {
       const t = (state.linearProgress - sec.start) / (sec.end - sec.start);
       return Math.min(Math.max(t, 0), 1);
     },
-    unregisterSection(id: string) {
+    removeSection(id: string) {
       sections.delete(id);
       sectionDescs.delete(id);
       updateSections();

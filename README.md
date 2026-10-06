@@ -616,6 +616,47 @@ with no video decoding:
 <ScrollFrames urls="/frames/frame_{i4}.webp" count={240} />
 ```
 
+## Without React (experimental)
+
+`vidscroll/core` runs the same loading, re-encoding and scrubbing on any
+page, with no React. You write the markup: a container with a stage inside.
+The stage pins while the container scrolls past, like `<ScrollVideo>`.
+
+```html
+<div id="hero" data-vidscroll>
+  <div data-vidscroll-stage>
+    <div data-vidscroll-overlay>
+      <h1 class="title">Open water</h1>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createScrollVideo } from "vidscroll/core";
+
+  const hero = document.getElementById("hero");
+  const video = createScrollVideo(
+    { container: hero, stage: hero.querySelector("[data-vidscroll-stage]") },
+    { src: "/videos/hero.mp4", length: "400vh", easing: "inOutSine" }
+  );
+
+  video.addSection({ id: "title", fromTime: 0, toTime: 4 });
+  video.on("sectionEnter", ({ id }) => console.log("entered", id));
+  video.on("loader", (state) => console.log(state));
+</script>
+```
+
+- The options are the `<ScrollVideo>` props, minus `loader`, `className`
+  and `style`.
+- The returned object has the same methods as `useScrollVideo().api`, plus
+  `update(options)` to change options, `getLoader()` and `destroy()`.
+  Listeners and sections stay attached for the life of the object.
+- There's no built-in loader UI. The `loader` event passes the same
+  `LoaderState` as a `loader` function (`null` once scrubbing is ready), so
+  you can draw your own.
+- The base styles are added to `<head>` once. They're also exported as
+  `styles` if you'd rather include them yourself.
+
 ## TypeScript
 
 Everything is typed. Besides the component props (`ScrollVideoProps`,
@@ -623,7 +664,7 @@ Everything is typed. Besides the component props (`ScrollVideoProps`,
 
 | Type | What it is |
 | --- | --- |
-| `ScrollVideoApi` | `useScrollVideo().api`: `on`, `off`, `getState`, `isReady`, `scrollToTime`, `scrollToProgress`, `getSectionProgress` |
+| `ScrollVideoApi` | `useScrollVideo().api`: `on`, `off`, `getState`, `isReady`, `scrollToTime`, `scrollToProgress`, `getSectionProgress`, `addSection`, `removeSection` |
 | `ScrollVideoSnapshot` | Engine state passed to `useScrollVideoUpdate` and `update` events |
 | `ScrollVideoState` | Return value of `useScrollVideoState` |
 | `LoaderState` | Argument of a `loader` function |

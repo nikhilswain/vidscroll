@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
 import { INITIAL_LOADER, createScrollVideo, previewSource } from "../core/controller";
-import type { LoaderState, ScrollVideoController, ScrollVideoOptions, ScrollVideoView } from "../core/controller";
+import type { LoaderState, ScrollVideoController, ScrollVideoOptions } from "../core/controller";
 import { ScrollVideoContext } from "./context";
 import { BaseStyles } from "./styles";
 
@@ -12,8 +12,6 @@ export interface ScrollVideoProps extends ScrollVideoOptions {
   className?: string;
   style?: CSSProperties;
 }
-
-const INITIAL_VIEW: ScrollVideoView = { engine: null, loader: INITIAL_LOADER };
 
 const PHASE_LABEL: Record<Exclude<LoaderState["phase"], "error">, string> = {
   download: "Loading video",
@@ -102,10 +100,10 @@ export function ScrollVideo({
 }: PropsWithChildren<ScrollVideoProps>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const controllerRef = useRef<ScrollVideoController | null>(null);
   const optionsRef = useRef(options);
   optionsRef.current = options;
-  const [view, setView] = useState<ScrollVideoView>(INITIAL_VIEW);
+  const [api, setApi] = useState<ScrollVideoController | null>(null);
+  const [loading, setLoading] = useState<LoaderState | null>(INITIAL_LOADER);
   const [media] = useState(() => InitialMedia(options));
 
   useEffect(() => {
@@ -113,24 +111,21 @@ export function ScrollVideo({
     const stage = stageRef.current;
     if (!container || !stage) return;
     const controller = createScrollVideo({ container, stage }, optionsRef.current);
-    controllerRef.current = controller;
-    setView(controller.getView());
-    const unsubscribe = controller.subscribe(setView);
+    setApi(controller);
+    setLoading(controller.getLoader());
+    controller.on("loader", setLoading);
     return () => {
-      unsubscribe();
       controller.destroy();
-      controllerRef.current = null;
+      setApi(null);
     };
   }, []);
 
   useEffect(() => {
-    controllerRef.current?.update(options);
+    api?.update(options);
   });
 
-  const api = view.engine;
   const contextValue = useMemo(() => ({ api }), [api]);
 
-  const loading = view.loader;
   const loaderContent = !loading
     ? null
     : typeof loader === "function"

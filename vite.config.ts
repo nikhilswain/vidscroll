@@ -6,9 +6,10 @@ export default defineConfig({
   root: "demo",
   plugins: [react()],
   resolve: {
-    alias: {
-      vidscroll: fileURLToPath(new URL("./src/index.ts", import.meta.url)),
-    },
+    alias: [
+      { find: /^vidscroll$/, replacement: fileURLToPath(new URL("./src/index.ts", import.meta.url)) },
+      { find: /^vidscroll\/core$/, replacement: fileURLToPath(new URL("./src/core/index.ts", import.meta.url)) },
+    ],
   },
   build: {
     outDir: "../dist-demo",

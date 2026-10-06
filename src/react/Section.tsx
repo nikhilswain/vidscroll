@@ -46,9 +46,9 @@ export function Section({
   const rangeKey = JSON.stringify(range);
   useEffect(() => {
     if (!api) return;
-    api.registerSection({ id: sectionId, ...rangeRef.current });
+    api.addSection({ id: sectionId, ...rangeRef.current });
     setActive(api.getState().activeSections.includes(sectionId));
-    return () => api.unregisterSection(sectionId);
+    return () => api.removeSection(sectionId);
   }, [api, sectionId, rangeKey]);
 
   useEffect(() => {

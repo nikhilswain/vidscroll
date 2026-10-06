@@ -1,3 +1,5 @@
+"use client";
+
 export { ScrollVideo } from "./react/ScrollVideo";
 export type { ScrollVideoProps, LoaderState } from "./react/ScrollVideo";
 export { Section } from "./react/Section";
