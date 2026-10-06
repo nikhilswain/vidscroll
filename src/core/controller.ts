@@ -44,7 +44,8 @@ export interface ScrollVideoController extends Omit<ScrollVideoApi, "on" | "off"
   on<K extends ScrollVideoEvent>(evt: K, handler: (payload: ScrollVideoEventMap[K]) => void): void;
   off<K extends ScrollVideoEvent>(evt: K, handler: (payload: ScrollVideoEventMap[K]) => void): void;
   getLoader(): LoaderState | null;
-  update(options: ScrollVideoOptions): void;
+  update(options: Partial<ScrollVideoOptions>): void;
+  setOptions(options: ScrollVideoOptions): void;
   destroy(): void;
 }
 
@@ -186,6 +187,7 @@ export function createScrollVideo(
   const fit = () => opts.fit ?? "cover";
   const fullPreload = () => opts.fullPreload ?? true;
   const smoothOn = () => !!opts.smoothScroll;
+  const smoothing = () => opts.smoothingTauMs ?? (smoothOn() ? 35 : undefined);
 
   let activeEl =
     stage.querySelector<HTMLVideoElement>(
@@ -321,19 +323,25 @@ export function createScrollVideo(
     const media = slots.active;
     engineKey = media?.engineKey;
     if (!media) return;
-    const created = createEngine({
-      video: activeEl,
-      container,
-      stage,
-      length: opts.length,
-      fps: opts.fps,
-      easing: opts.easing,
-      smoothingTauMs: opts.smoothingTauMs ?? (smoothOn() ? 35 : undefined),
-      warmup: opts.warmup,
-      preview: media.preview,
-      debug: opts.debug,
-      onDebug: opts.onDebug,
-    });
+    let created: EngineAPI;
+    try {
+      created = createEngine({
+        video: activeEl,
+        container,
+        stage,
+        length: opts.length,
+        fps: opts.fps,
+        easing: opts.easing,
+        smoothingTauMs: smoothing(),
+        warmup: opts.warmup,
+        preview: media.preview,
+        debug: opts.debug,
+        onDebug: opts.onDebug,
+      });
+    } catch (err) {
+      fail(err as Error);
+      return;
+    }
     engine = created;
     const onWarmup = (p: { value: number }) => {
       warmupProgress = p.value;
@@ -458,6 +466,13 @@ export function createScrollVideo(
 
     if (!fullPreload()) {
       pipeline = null;
+      try {
+        checkSourceUrl(src);
+      } catch (err) {
+        setSlots(EMPTY);
+        fail(err as Error);
+        return;
+      }
       setSlots({ active: toMedia(stream, false), next: null });
       reportLoad(stream);
       return;
@@ -512,30 +527,47 @@ export function createScrollVideo(
     if (o) releaseSmoothScroll = acquireSmoothScroll(o !== true ? o : undefined);
   }
 
+  function setOptions(next: ScrollVideoOptions) {
+    if (destroyed) return;
+    const prev = opts;
+    opts = next;
+    const prevSmooth = !!prev.smoothScroll;
+    if (prevSmooth !== smoothOn()) syncSmoothScroll();
+    if ((prev.fit ?? "cover") !== fit()) {
+      for (const el of [activeEl, nextEl, previewEl]) el?.setAttribute("data-fit", fit());
+    }
+    if (prev.poster !== next.poster) applyPoster();
+    if (
+      prev.src !== next.src ||
+      (prev.fullPreload ?? true) !== fullPreload() ||
+      JSON.stringify(prev.optimize ?? null) !== JSON.stringify(next.optimize ?? null)
+    ) {
+      load();
+      return;
+    }
+    if (
+      String(prev.length ?? "auto") !== String(next.length ?? "auto") ||
+      prevSmooth !== smoothOn() ||
+      prev.fps !== next.fps
+    ) {
+      startEngine();
+      render();
+      syncSwap();
+      return;
+    }
+    if (prev.easing !== next.easing) engine?.setEasing(next.easing);
+    if (prev.smoothingTauMs !== next.smoothingTauMs) engine?.setSmoothing(smoothing());
+    render();
+  }
+
   syncSmoothScroll();
   load();
 
   return {
-    update(next) {
-      if (destroyed) return;
-      const prev = opts;
-      opts = next;
-      const prevSmooth = !!prev.smoothScroll;
-      if (prevSmooth !== smoothOn()) syncSmoothScroll();
-      if ((prev.fit ?? "cover") !== fit()) {
-        for (const el of [activeEl, nextEl, previewEl]) el?.setAttribute("data-fit", fit());
-      }
-      if (prev.poster !== next.poster) applyPoster();
-      if (prev.src !== next.src || (prev.fullPreload ?? true) !== fullPreload()) {
-        load();
-      } else if (String(prev.length ?? "auto") !== String(next.length ?? "auto") || prevSmooth !== smoothOn()) {
-        startEngine();
-        render();
-        syncSwap();
-      } else {
-        render();
-      }
+    update(partial) {
+      setOptions({ ...opts, ...partial });
     },
+    setOptions,
     getLoader: () => loader,
     on(evt, handler) {
       let set = listeners.get(evt);

@@ -45,6 +45,20 @@ describe("ScrollVideo loader", () => {
   });
 });
 
+describe("ScrollVideo errors", () => {
+  it("shows the error message even with a custom loader node", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("missing", { status: 404 })));
+    await act(async () => {
+      root.render(createElement(ScrollVideo, { src: "/missing.mp4", loader: createElement("p", null, "Custom") }));
+    });
+    await act(async () => {});
+    const box = container.querySelector("[data-vidscroll-loader]");
+    expect(box?.getAttribute("data-phase")).toBe("error");
+    expect(box?.textContent).toContain("HTTP 404");
+  });
+});
+
 describe("ScrollVideo easing", () => {
   it("warns once about an unknown easing name", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});

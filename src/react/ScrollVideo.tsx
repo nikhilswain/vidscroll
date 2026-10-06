@@ -116,7 +116,7 @@ export function ScrollVideo({
   }, []);
 
   useEffect(() => {
-    api?.update(options);
+    api?.setOptions(options);
   });
 
   const contextValue = useMemo(() => ({ api }), [api]);
@@ -125,7 +125,7 @@ export function ScrollVideo({
     ? null
     : typeof loader === "function"
       ? loader(loading, DefaultLoader(loading))
-      : loader == null
+      : loader == null || loading.phase === "error"
         ? DefaultLoader(loading)
         : loading.background
           ? null

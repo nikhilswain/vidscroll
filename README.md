@@ -1,7 +1,8 @@
 # vidscroll
 
-Scroll-scrubbed video for React. Scrolling moves a video frame by frame, with
-text sections that fade in and out along the way.
+Scroll-scrubbed video for React, with an experimental custom element for any
+other page. Scrolling moves a video frame by frame, with text sections that
+fade in and out along the way.
 
 - **Smooth on any video file.** Most exported videos have keyframes several
   seconds apart, which makes every seek slow. vidscroll detects that and
@@ -158,11 +159,11 @@ npx vidscroll --help
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `[output]` | `<input>.scroll.mp4` | Where to write the prepared video |
+| `[output]` | input name with `.scroll.mp4` (`hero.mov` → `hero.scroll.mp4`) | Where to write the prepared video |
 | `--resolution <px>` | 720 | Cap on the shorter side (720 = 720p, landscape or portrait). Never upscales |
 | `--gop <frames>` | 10 | Frames between keyframes; lower seeks faster, file gets bigger |
 | `--crf <n>` | 22 | Quality; lower is better and bigger (18–28 is sensible) |
-| `--fps <n>` | source | Frame-rate cap |
+| `--fps <n>` | source | Frame-rate cap: faster sources are reduced, slower ones keep their rate |
 
 Examples:
 
@@ -227,7 +228,7 @@ video actually needs it (about 180 KB gzipped).
 | Video file on your site (`/hero.mp4`) | Works fully |
 | Video file on another domain **with CORS** (`Access-Control-Allow-Origin`) | Works fully |
 | Video file on another domain **without CORS** | Plays, but can't be read or re-encoded; scrubs smoothly only if pre-encoded. Logs a warning |
-| YouTube / Vimeo / TikTok / Instagram page links | Error: these are web pages, not files. Their streams are signed, expire, and can't be read by other sites |
+| YouTube, Vimeo, TikTok, Instagram, Facebook, X, Dailymotion or Twitch page links | Error: these are web pages, not files. Their streams are signed, expire, and can't be read by other sites |
 | HLS / DASH streams (`.m3u8`, `.mpd`) | Error: built for linear playback, can't be scrubbed |
 | A path that doesn't exist | Error, including when your host answers with `index.html` |
 
@@ -250,10 +251,10 @@ owners download their uploads) and host the file yourself.
 | `onError` | | `(error) => void`. Errors are `VidscrollError` with a `code` |
 | `fullPreload` | `true` | `false` streams the URL directly and skips optimization |
 | `className`, `style` | | Applied to the outer block |
-| `fps` | 30 | Frame rate used for frame-based section ranges |
-| `smoothingTauMs` | 100 (35 with `smoothScroll`) | How tightly the video follows the scroll position. After fast scrolling (over 2x the video's speed) the follow loosens to up to 150 ms, so the video and sections glide to a stop instead of jumping. Jumps of more than 1 s of video in one frame (scrollbar drags, `behavior: "instant"`) snap straight there |
-| `warmup` | `true` | Touch the whole timeline once while loading. `false` or a step count |
-| `debug` / `onDebug` | | Log engine internals |
+| `fps` | 30 | Frame rate used for frame-based section ranges and frame numbers. When the browser can measure the video's real frame rate while loading, that value is used instead |
+| `smoothingTauMs` | 100 (35 with `smoothScroll`) | How tightly the video follows the scroll position. After fast scrolling (over 2x the video's speed) the follow loosens to up to 150 ms, so the video and sections glide to a stop instead of jumping. Jumps of more than 1 s of video in one frame (scrollbar drags, `behavior: "instant"`) skip the loosening and ease over at the normal rate |
+| `warmup` | `true` | Touch the whole timeline once while loading. `false` or a step count. Read when the video starts |
+| `debug` / `onDebug` | | Log engine internals. Read when the video starts |
 
 Set `length` explicitly when there's content below the video: with
 `"auto"`, the block only knows its height once the video's duration has
@@ -707,7 +708,8 @@ inside. The stage pins while the container scrolls past.
 - The options are the `<ScrollVideo>` props, minus `loader`, `className`
   and `style`.
 - The returned object has the same methods as `useScrollVideo().api`, plus
-  `update(options)` to change options, `getLoader()` and `destroy()`.
+  `update(options)` to change some options (the rest keep their values),
+  `setOptions(options)` to replace all of them, `getLoader()` and `destroy()`.
   Listeners and sections stay attached for the life of the object.
 - There's no built-in loader UI. The `loader` event passes the same
   `LoaderState` as a `loader` function (`null` once scrubbing is ready), so
@@ -765,7 +767,9 @@ Live at https://vidscroll.ze-ro.workers.dev, or run them locally with
 | A Small Vigil | Line-by-line poetry styled only with `--progress` CSS |
 | The Commute | Film framing, captions timed in seconds, chapter jumps with `scrollToTime`, a pre-encoded video |
 | Evening Almanac | Live numbers and an SVG driven from the `update` event, no re-renders |
-| Basics | The smallest setup |
+| From a CDN | Videos from other sites, with and without CORS, and how each one is served |
+| In a page | Two scroll videos between ordinary content |
+| Without React | The `<vid-scroll>` custom element on a plain HTML page |
 
 ## Development
 

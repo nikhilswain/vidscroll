@@ -43,4 +43,13 @@ describe("vidscroll CLI", () => {
     expect(probe?.height).toBe(144);
     expect(probe?.maxKeyframeGap).toBeLessThanOrEqual(10 / 15 + 0.01);
   });
+
+  it("treats --fps as a cap and never adds frames", () => {
+    const source = probeMp4(readBytes(FRAGMENTED_LONG_GOP).buffer)!;
+    const output = join(dir, "capped.mp4");
+    const result = run("encode", FRAGMENTED_LONG_GOP, output, "--resolution", "144", "--fps", "240");
+    expect(result.status).toBe(0);
+    const probe = probeMp4(readBytes(output).buffer)!;
+    expect(probe.frameCount / probe.duration).toBeCloseTo(source.frameCount / source.duration, 0);
+  });
 });

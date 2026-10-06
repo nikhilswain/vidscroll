@@ -1,4 +1,4 @@
-import { easing, invertEasing } from "./easing";
+import { easing, invertEasing, withTail } from "./easing";
 import { warnOnce } from "./source";
 import type {
   EngineOptions,
@@ -70,8 +70,8 @@ export function createEngine(options: EngineOptions): EngineAPI {
   const container = options.container;
   const stage = options.stage ?? null;
   const lengthOpt = options.length ?? "auto";
-  const easingFn = resolveEasing(options.easing);
-  const tauMs = options.smoothingTauMs ?? DEFAULT_TAU_MS;
+  let applyEasing = withTail(resolveEasing(options.easing));
+  let tauMs = options.smoothingTauMs ?? DEFAULT_TAU_MS;
   let preview = options.preview === true;
   const playsForward = isAndroid();
   const warmupEnabled = options.warmup !== false && !preview;
@@ -225,15 +225,6 @@ export function createEngine(options: EngineOptions): EngineAPI {
     if (!framesMode && duration <= 0) return;
     tickPending = true;
     tickRafId = requestAnimationFrame(tick);
-  }
-
-  function applyEasing(p: number) {
-    let eased = easingFn(p);
-    if (eased > 0.99) {
-      const tailPortion = (eased - 0.99) / 0.01;
-      eased = 0.99 + tailPortion * (p - 0.99);
-    }
-    return Math.min(Math.max(eased, 0), 1);
   }
 
   function smoothingTau(dt: number, waking: boolean) {
@@ -629,6 +620,15 @@ export function createEngine(options: EngineOptions): EngineAPI {
       return { ...state };
     },
     swapVideo,
+    setEasing(option) {
+      if (destroyed) return;
+      applyEasing = withTail(resolveEasing(option));
+      recomputeDerived();
+      requestTick();
+    },
+    setSmoothing(ms) {
+      tauMs = ms ?? DEFAULT_TAU_MS;
+    },
     isReady() {
       return readyEmitted;
     },

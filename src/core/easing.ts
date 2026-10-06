@@ -23,3 +23,13 @@ export function invertEasing(curve: (t: number) => number, value: number) {
   }
   return hi;
 }
+
+const TAIL_FROM = 0.99;
+
+export function withTail(curve: (t: number) => number) {
+  const atTail = curve(TAIL_FROM);
+  return (p: number) => {
+    const value = p <= TAIL_FROM ? curve(p) : atTail + (1 - atTail) * ((p - TAIL_FROM) / (1 - TAIL_FROM));
+    return Math.min(Math.max(value, 0), 1);
+  };
+}

@@ -73,6 +73,8 @@ export interface EngineAPI {
   isReady(): boolean;
   notifyReady(): void;
   swapVideo(next: HTMLVideoElement): Promise<void>;
+  setEasing(option: EngineOptions["easing"]): void;
+  setSmoothing(ms: number | undefined): void;
   on<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>): void;
   off<K extends EngineEvent>(evt: K, handler: EngineEventHandler<K>): void;
   addSection(desc: SectionDescriptor): void;

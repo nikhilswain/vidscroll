@@ -10,6 +10,8 @@ export interface FakeEngine extends EngineAPI {
   sections: Map<string, SectionDescriptor>;
   active: string[];
   progress: Map<string, number>;
+  easing?: EngineOptions["easing"];
+  smoothing?: number;
   emit(evt: string, payload: unknown): void;
   emitReady(): void;
   swap: { element: HTMLVideoElement; resolve: () => void; reject: (err: Error) => void } | null;
@@ -59,6 +61,8 @@ export function installFakes() {
       }),
       isReady: () => ready,
       notifyReady() {},
+      setEasing: (option) => void (engine.easing = option),
+      setSmoothing: (ms) => void (engine.smoothing = ms),
       swapVideo: (element) =>
         new Promise<void>((resolve, reject) => {
           engine.swap = { element, resolve, reject };

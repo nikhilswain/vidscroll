@@ -6,7 +6,8 @@ import { existsSync, statSync } from "node:fs";
 const HELP = `Usage: vidscroll encode <input> [output] [options]
 
 Re-encode a video for smooth scroll scrubbing (short keyframe interval,
-capped resolution, no audio). Output defaults to <input>.scroll.mp4.
+capped resolution, no audio). Output defaults to the input name with
+the extension replaced by .scroll.mp4 (hero.mov -> hero.scroll.mp4).
 
 Options:
   --resolution <px>  Short-side resolution cap, e.g. 720 or 1080 (default 720)
@@ -78,7 +79,7 @@ async function encode(argv) {
   const scale =
     `scale='if(gt(iw,ih),-2,min(${resolution},iw))':` +
     `'if(gt(iw,ih),min(${resolution},ih),-2)'`;
-  const filters = [scale, ...(fps ? [`fps=${fps}`] : [])].join(",");
+  const filters = [scale, ...(fps ? [`fps=fps='min(source_fps,${fps})'`] : [])].join(",");
 
   const result = spawnSync(
     ffmpeg,

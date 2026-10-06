@@ -23,6 +23,8 @@ const SHADOW_CSS = `
 .fill { height: 100%; background: #fff; transition: width 0.2s ease; }
 .label { font-size: 13px; opacity: 0.7; }
 .loader[data-background] .label { font-size: 12px; opacity: 0.8; }
+.slot { display: contents; }
+.slot[hidden] { display: none; }
 .error { max-width: 520px; padding: 24px; font-size: 14px; line-height: 1.5; opacity: 0.85; }
 `;
 
@@ -139,6 +141,7 @@ export class VidScrollElement extends Base {
   #stage: HTMLElement | null = null;
   #loaderBox: HTMLElement | null = null;
   #defaultLoader: ReturnType<typeof createDefaultLoader> | null = null;
+  #slotWrap: HTMLElement | null = null;
   #sections = new Set<VidScrollSectionElement>();
   #sectionProgress = new Map<VidScrollSectionElement, number>();
   #options: Partial<ScrollVideoOptions> = {};
@@ -248,7 +251,7 @@ export class VidScrollElement extends Base {
     const options = this.#readOptions();
     if (!options.src) return this.#stop();
     if (this.#controller) {
-      this.#controller.update(options);
+      this.#controller.setOptions(options);
       this.#showLoader(this.#controller.getLoader());
       return;
     }
@@ -292,9 +295,13 @@ export class VidScrollElement extends Base {
     loaderBox.hidden = true;
     const loaderSlot = document.createElement("slot");
     loaderSlot.name = "loader";
+    const slotWrap = document.createElement("div");
+    slotWrap.className = "slot";
     const defaultLoader = createDefaultLoader();
-    loaderSlot.append(defaultLoader.root, defaultLoader.error);
-    loaderBox.append(loaderSlot);
+    loaderSlot.append(defaultLoader.root);
+    slotWrap.append(loaderSlot);
+    loaderBox.append(slotWrap, defaultLoader.error);
+    this.#slotWrap = slotWrap;
     stage.append(overlay, loaderBox);
     root.replaceChildren(style, stage);
     this.#stage = stage;
@@ -319,6 +326,7 @@ export class VidScrollElement extends Base {
     box.hidden = hidden;
     if (hidden || !state) return;
     box.setAttribute("data-phase", state.phase);
+    if (this.#slotWrap) this.#slotWrap.hidden = !!state.error;
     box.toggleAttribute("data-background", state.background);
     this.#defaultLoader?.update(state);
   }

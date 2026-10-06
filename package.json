@@ -1,7 +1,7 @@
 {
   "name": "vidscroll",
   "version": "0.3.0",
-  "description": "Scroll-scrubbed video for React. Smooth on any MP4/WebM: videos with sparse keyframes are re-encoded in the browser automatically.",
+  "description": "Scroll-scrubbed video for React, plus an experimental custom element. Smooth on any MP4/WebM: videos with sparse keyframes are re-encoded in the browser automatically.",
   "keywords": [
     "react",
     "scroll",
