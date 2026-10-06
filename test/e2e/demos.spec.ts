@@ -182,3 +182,33 @@ test("a video the browser can't seek shows an error instead of loading forever",
   await expect(page.locator("[data-vidscroll-loader]")).toContainText("can't scrub", { timeout: 60_000 });
   await expect(page.locator("[data-vidscroll-loader]")).toContainText("npx vidscroll encode");
 });
+
+test("the custom element works on a plain HTML page", async ({ page }) => {
+  await page.goto("/element.html");
+  const film = page.locator("vid-scroll");
+  await expect(film).not.toHaveAttribute("data-phase", /.*/, { timeout: 60_000 });
+  await expect(page.locator("vid-scroll-section[data-active]")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Setting sail" }).click();
+  await expect(page.locator('.chapters button[aria-current="true"]')).toHaveText("Setting sail", { timeout: 15_000 });
+  await expect(page.locator("vid-scroll-section[data-active]")).toHaveText("The train lets go of the rails.");
+
+  const { time, stageTop } = await page.evaluate(async () => {
+    const el = document.querySelector("vid-scroll")!;
+    const video = el.shadowRoot!.querySelector("video")!;
+    while (video.seeking) await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 600));
+    return {
+      time: video.currentTime,
+      stageTop: el.shadowRoot!.querySelector("[data-vidscroll-stage]")!.getBoundingClientRect().top,
+    };
+  });
+  expect(time).toBeCloseTo(18.55, 1);
+  expect(stageTop).toBe(0);
+
+  const underButton = await page.getByRole("button", { name: "Daydream" }).evaluate((button) => {
+    const box = button.getBoundingClientRect();
+    return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)?.textContent;
+  });
+  expect(underButton, "an active section must not cover other overlay content").toBe("Daydream");
+});

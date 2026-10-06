@@ -619,9 +619,66 @@ with no video decoding:
 
 ## Without React (experimental)
 
-`vidscroll/core` runs the same loading, re-encoding and scrubbing on any
-page, with no React. You write the markup: a container with a stage inside.
-The stage pins while the container scrolls past, like `<ScrollVideo>`.
+The same loading, re-encoding and scrubbing work on any page: plain HTML,
+WordPress, Webflow, Vue, Svelte, Astro. Both entries below are experimental,
+so their API may still change.
+
+### The `<vid-scroll>` element
+
+```html
+<script type="module">
+  import "vidscroll/element";
+</script>
+
+<vid-scroll src="/videos/hero.mp4" length="400vh" easing="inOutSine" smooth-scroll>
+  <vid-scroll-section from-time="0" to-time="4">
+    <h1>Open water</h1>
+  </vid-scroll-section>
+  <vid-scroll-section start="0.5" end="1">
+    <p>Setting sail</p>
+  </vid-scroll-section>
+</vid-scroll>
+```
+
+Without a bundler, load the standalone build from a CDN instead:
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll/dist/cdn/vidscroll-element.js"></script>
+```
+
+- **Attributes** match the `<ScrollVideo>` props in kebab-case: `src`,
+  `length`, `easing`, `fps`, `fit`, `poster`, `smooth-scroll`, `warmup`,
+  `debug`. `optimize="false"` skips the re-encode, `optimize="wait"` waits for
+  it, `full-preload="false"` streams the file. Anything else (callbacks,
+  `optimize` settings) goes in the `options` property:
+  `el.options = { optimize: { maxResolution: 720 } }`.
+- **Sections** take `start`/`end`, `from-time`/`to-time` or
+  `from-frame`/`to-frame`, just like `<Section>`. They get `data-active` and
+  `--progress`, and the `[data-vidscroll-section]` styles and recipes above
+  work on them.
+- **Your content stays yours.** Children of `<vid-scroll>` remain ordinary
+  page elements, shown in the pinned stage through a slot, so page CSS and
+  framework re-renders work as usual. `--video-progress` is set on the element.
+- **The video and loader** live inside the element. Style them with
+  `vid-scroll::part(video)`, `::part(stage)` and `::part(loader)`. While
+  loading, the element has `data-phase` (and `data-background` for the corner
+  badge) plus a `--loader-progress` variable, e.g.
+  `vid-scroll[data-background]::part(loader) { display: none; }`.
+  `loader="none"` hides the loader; a child with `slot="loader"` replaces it
+  (shown only while scrubbing isn't possible yet, like a custom `loader` in
+  React).
+- **From JavaScript**, `el.scrollToTime(s)` and `el.scrollToProgress(p)`
+  scroll the page, and `el.api` is the full controller (below). Events bubble:
+  `vidscroll-load`, `vidscroll-error`, `vidscroll-loader`, `vidscroll-ready`,
+  and `vidscroll-enter` / `vidscroll-exit` from each section.
+
+[See it on a plain HTML page →](https://vidscroll.ze-ro.workers.dev/element.html)
+
+### `vidscroll/core`
+
+For full control, `vidscroll/core` gives you the controller behind both the
+element and `<ScrollVideo>`. You write the markup: a container with a stage
+inside. The stage pins while the container scrolls past.
 
 ```html
 <div id="hero" data-vidscroll>

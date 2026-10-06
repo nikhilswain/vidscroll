@@ -14,7 +14,8 @@ export interface Demo {
   source: string;
   poster: string;
   credit?: Credit;
-  component: ComponentType;
+  component?: ComponentType;
+  href?: string;
 }
 
 export const DEMOS: Demo[] = [
@@ -65,5 +66,15 @@ export const DEMOS: Demo[] = [
     poster: "/posters/basics.webp",
     credit: TRAIN_CREDIT,
     component: Basics,
+  },
+  {
+    slug: "element",
+    title: "Without React",
+    description:
+      "A plain HTML page using the experimental <vid-scroll> custom element: sections as child elements, chapter buttons, no framework at all.",
+    source: "demo/element.html",
+    poster: "/posters/commute.webp",
+    credit: TRAIN_CREDIT,
+    href: "/element.html",
   },
 ];

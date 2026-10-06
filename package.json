@@ -22,7 +22,9 @@
     "url": "https://github.com/nikhilswain/vidscroll/issues"
   },
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/element.js"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -35,6 +37,10 @@
       "types": "./dist/core.d.ts",
       "import": "./dist/core.js"
     },
+    "./element": {
+      "types": "./dist/element.d.ts",
+      "import": "./dist/element.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -46,7 +52,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsup",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsup",
     "build:demo": "vite build",
     "typecheck": "tsc -b",
     "lint": "eslint .",

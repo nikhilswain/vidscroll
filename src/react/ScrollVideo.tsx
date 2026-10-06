@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
-import { INITIAL_LOADER, createScrollVideo, previewSource } from "../core/controller";
+import { INITIAL_LOADER, LOADER_HINT, createScrollVideo, loaderLabel, previewSource } from "../core/controller";
 import type { LoaderState, ScrollVideoController, ScrollVideoOptions } from "../core/controller";
 import { ScrollVideoContext } from "./context";
 import { BaseStyles } from "./styles";
@@ -12,12 +12,6 @@ export interface ScrollVideoProps extends ScrollVideoOptions {
   className?: string;
   style?: CSSProperties;
 }
-
-const PHASE_LABEL: Record<Exclude<LoaderState["phase"], "error">, string> = {
-  download: "Loading video",
-  optimize: "Optimizing video",
-  preparing: "Preparing",
-};
 
 function ProgressBar({ progress, width }: { progress: number; width: number }) {
   return (
@@ -42,7 +36,8 @@ function ProgressBar({ progress, width }: { progress: number; width: number }) {
   );
 }
 
-function DefaultLoader({ phase, progress, background, error }: LoaderState) {
+function DefaultLoader(state: LoaderState) {
+  const { progress, background, error } = state;
   if (error) {
     return (
       <div style={{ maxWidth: 520, padding: 24, fontSize: 14, lineHeight: 1.5, opacity: 0.85 }}>
@@ -50,11 +45,11 @@ function DefaultLoader({ phase, progress, background, error }: LoaderState) {
       </div>
     );
   }
-  const label = `${PHASE_LABEL[phase as keyof typeof PHASE_LABEL]} ${Math.round(progress * 100)}%`;
+  const label = loaderLabel(state);
   if (background) {
     return (
       <div
-        title="Scrubbing gets smoother once this finishes"
+        title={LOADER_HINT}
         style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}
       >
         <ProgressBar progress={progress} width={56} />

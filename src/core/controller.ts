@@ -87,6 +87,17 @@ const IDLE_STATE: EngineStateSnapshot = {
 
 export const INITIAL_LOADER: LoaderState = { phase: "download", progress: 0, background: false };
 
+const PHASE_LABEL: Record<Exclude<LoaderState["phase"], "error">, string> = {
+  download: "Loading video",
+  optimize: "Optimizing video",
+  preparing: "Preparing",
+};
+
+export const loaderLabel = ({ phase, progress }: LoaderState) =>
+  `${PHASE_LABEL[phase as keyof typeof PHASE_LABEL]} ${Math.round(progress * 100)}%`;
+
+export const LOADER_HINT = "Scrubbing gets smoother once this finishes";
+
 export function previewSource(src: string): string | null {
   try {
     checkSourceUrl(src);
@@ -136,6 +147,7 @@ const sameLoader = (a: LoaderState | null, b: LoaderState | null) =>
 function createVideo(fit: string): HTMLVideoElement {
   const video = document.createElement("video");
   video.setAttribute("data-vidscroll-media", "");
+  video.setAttribute("part", "video");
   video.setAttribute("data-fit", fit);
   video.muted = true;
   video.setAttribute("muted", "");

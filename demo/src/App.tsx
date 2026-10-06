@@ -22,7 +22,7 @@ export default function App() {
   if (slug === "lab") return <Lab />;
 
   const demo = DEMOS.find((d) => d.slug === slug);
-  if (!demo) {
+  if (!demo?.component) {
     return (
       <>
         <TopBar />

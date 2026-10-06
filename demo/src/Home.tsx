@@ -84,7 +84,7 @@ export function Home() {
         <ul className="gallery__grid">
           {DEMOS.map((demo) => (
             <li key={demo.slug}>
-              <a className="demo-card" href={`#/${demo.slug}`}>
+              <a className="demo-card" href={demo.href ?? `#/${demo.slug}`}>
                 <div className="demo-card__poster">
                   <img src={demo.poster} alt="" loading="lazy" width={960} height={540} />
                 </div>

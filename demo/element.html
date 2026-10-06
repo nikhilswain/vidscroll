@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Without React · vidscroll</title>
+    <meta name="description" content="A plain HTML page using the vid-scroll custom element." />
+    <meta name="theme-color" content="#111014" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Instrument+Sans:wght@400;500&display=swap"
+    />
+    <style>
+      :root {
+        --peach: #f6b98e;
+        --serif: "Cormorant Garamond", Georgia, serif;
+        --sans: "Instrument Sans", system-ui, sans-serif;
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #111014;
+        color: #ece6e1;
+        font-family: var(--sans);
+      }
+      a { color: var(--peach); }
+      .top {
+        position: fixed;
+        inset: 0 0 auto 0;
+        z-index: 10;
+        display: flex;
+        justify-content: space-between;
+        padding: 14px 16px;
+        font-size: 14px;
+        pointer-events: none;
+      }
+      .top a { pointer-events: auto; text-decoration: none; }
+      .text {
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 30vh 16px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+      .text h1, .text h2 {
+        margin: 0 0 1rem;
+        font-family: var(--serif);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
+        line-height: 1.05;
+      }
+      code { color: var(--peach); font-size: 0.95em; }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border-radius: 8px;
+        background: #1c1a20;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      vid-scroll-section {
+        align-items: flex-end;
+        padding-bottom: 12vh;
+      }
+      vid-scroll-section p {
+        margin: 0 16px;
+        padding: 6px 14px;
+        border-radius: 4px;
+        background: rgb(0 0 0 / 0.55);
+        color: #fff;
+        font-family: var(--serif);
+        font-size: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+        text-align: center;
+        transform: translateY(calc((1 - var(--progress, 0)) * 12px));
+      }
+      .chapters {
+        position: absolute;
+        top: 64px;
+        left: 50%;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: min(100% - 32px, 40rem);
+        translate: -50% 0;
+        pointer-events: auto;
+      }
+      .chapters button {
+        padding: 6px 12px;
+        border: 1px solid rgb(255 255 255 / 0.35);
+        border-radius: 999px;
+        background: rgb(0 0 0 / 0.35);
+        color: #fff;
+        font: 13px var(--sans);
+        cursor: pointer;
+      }
+      .chapters button[aria-current="true"] {
+        border-color: var(--peach);
+        color: var(--peach);
+      }
+      .bar {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 3px;
+        background: var(--peach);
+        transform-origin: left;
+        transform: scaleX(var(--video-progress, 0));
+      }
+      vid-scroll::part(loader) {
+        font-family: var(--sans);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="top">
+      <a href="/">← vidscroll demos</a>
+      <a href="https://github.com/nikhilswain/vidscroll/blob/main/demo/element.html" target="_blank" rel="noreferrer">Source</a>
+    </nav>
+
+    <header class="text">
+      <h1>No framework required</h1>
+      <p>
+        This page is plain HTML with one script tag. The video below is a
+        <code>&lt;vid-scroll&gt;</code> element, and each caption is a
+        <code>&lt;vid-scroll-section&gt;</code> inside it. It's experimental for now.
+      </p>
+      <pre><code>&lt;script type="module"&gt;import "vidscroll/element";&lt;/script&gt;
+
+&lt;vid-scroll src="/commute.mp4" length="500vh" easing="inOutSine"&gt;
+  &lt;vid-scroll-section from-time="0" to-time="4"&gt;
+    &lt;p&gt;Doors close.&lt;/p&gt;
+  &lt;/vid-scroll-section&gt;
+&lt;/vid-scroll&gt;</code></pre>
+    </header>
+
+    <vid-scroll id="film" src="/commute.mp4" length="500vh" easing="inOutSine" fit="contain" smooth-scroll>
+      <div class="chapters" role="group" aria-label="Chapters">
+        <button type="button" data-at="0">Doors</button>
+        <button type="button" data-at="4.6">Carriage</button>
+        <button type="button" data-at="9.48">Daydream</button>
+        <button type="button" data-at="12.18">Open water</button>
+        <button type="button" data-at="17.95">Setting sail</button>
+        <button type="button" data-at="25.06">Away</button>
+      </div>
+      <vid-scroll-section from-time="0.3" to-time="4.4"><p>Doors close. Another morning.</p></vid-scroll-section>
+      <vid-scroll-section from-time="4.9" to-time="9.2"><p>The carriage rocks itself to sleep.</p></vid-scroll-section>
+      <vid-scroll-section from-time="9.7" to-time="12"><p>Somewhere, a window opens.</p></vid-scroll-section>
+      <vid-scroll-section from-time="12.4" to-time="17.7"><p>Water, all the way to the edge.</p></vid-scroll-section>
+      <vid-scroll-section from-time="18.2" to-time="24.8"><p>The train lets go of the rails.</p></vid-scroll-section>
+      <vid-scroll-section from-time="25.3" to-time="29.5"><p>And sails on.</p></vid-scroll-section>
+      <div class="bar"></div>
+    </vid-scroll>
+
+    <section class="text">
+      <h2>How the buttons work</h2>
+      <p>
+        <code>film.scrollToTime(seconds)</code> scrolls the page to a moment in the video.
+        Captions get <code>data-active</code> and a <code>--progress</code> variable, the bar uses
+        <code>--video-progress</code>, and the active chapter comes from
+        <code>vidscroll-enter</code> events. The element keeps your content as ordinary children,
+        so page CSS styles it as usual.
+      </p>
+      <p>
+        Train animation:
+        <a href="https://www.youtube.com/watch?v=_Td7JjCTfyc" target="_blank" rel="noreferrer">“30 second animation assignment”</a>
+        by roenais.
+      </p>
+    </section>
+
+    <script type="module">
+      import "vidscroll/element";
+
+      const film = document.getElementById("film");
+      const buttons = [...film.querySelectorAll(".chapters button")];
+      const sections = [...film.querySelectorAll("vid-scroll-section")];
+
+      for (const button of buttons) {
+        button.addEventListener("click", () => film.scrollToTime(Number(button.dataset.at) + 0.6));
+      }
+
+      film.addEventListener("vidscroll-enter", (event) => {
+        const index = sections.indexOf(event.target);
+        buttons.forEach((button, i) => button.setAttribute("aria-current", String(i === index)));
+      });
+    </script>
+  </body>
+</html>
