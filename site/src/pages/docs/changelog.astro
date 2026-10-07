@@ -1,0 +1,21 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { Content, getHeadings } from "../../../../CHANGELOG.md";
+
+const frontmatter = { title: "Changelog", description: "What changed in each published version.", slug: "changelog" };
+const headings = getHeadings().filter((heading) => heading.depth > 1);
+---
+<DocsLayout frontmatter={frontmatter} headings={headings}>
+  <div class="changelog">
+    <Content />
+  </div>
+  <p>
+    Each version is also on <a href="https://github.com/nikhilswain/vidscroll/releases">GitHub Releases</a>.
+  </p>
+</DocsLayout>
+
+<style>
+  .changelog :global(h1) {
+    display: none;
+  }
+</style>

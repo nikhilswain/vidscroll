@@ -1,26 +1,15 @@
----
-layout: ../../layouts/DocsLayout.astro
-title: Changelog
-description: What changed in each published version.
-slug: changelog
----
-
-import Pre from "../../components/Pre.astro";
-import Link from "../../components/Link.astro";
-import Table from "../../components/Table.astro";
-
-export const components = { pre: Pre, a: Link, table: Table };
+# Changelog
 
 Before 1.0, minor versions (0.2, 0.3) add features and patch versions (0.3.1,
 0.3.2) only fix things. Nothing below breaks existing React code.
 
-## 0.3.2
+## 0.3.2 (2026-10-07)
 
 - With an explicit `length`, `ScrollVideo` renders its final height from the
   first render, including on the server. Content below the video no longer
   jumps when the page's JavaScript starts.
 
-## 0.3.1
+## 0.3.1 (2026-10-06)
 
 - Fixed: easing presets moved the video backwards near the end of the scroll.
   All presets now move forward only.
@@ -33,7 +22,7 @@ Before 1.0, minor versions (0.2, 0.3) add features and patch versions (0.3.1,
 - The error message is shown even with a custom loader.
 - CLI: `--fps` is a cap: slower sources keep their frame rate.
 
-## 0.3.0
+## 0.3.0 (2026-10-06)
 
 - **New:** `vidscroll/core`, the plain JavaScript controller behind the React
   component (experimental).
@@ -48,14 +37,14 @@ Before 1.0, minor versions (0.2, 0.3) add features and patch versions (0.3.1,
 - Fixed: an active section blocked clicks on content behind its empty area.
 - `ScrollVideoApi` gains `addSection` and `removeSection`.
 
-## 0.2.2
+## 0.2.2 (2026-10-05)
 
 - `easing` accepts preset names (`"inOutSine"`, `"outCubic"` and others), which
   also works from Next.js server components.
 - Time- and frame-based sections stay on their frames when an easing curve is
   used.
 
-## 0.2.1
+## 0.2.1 (2026-10-05)
 
 - **Scroll while optimizing:** a raw video can be scrolled straight away while
   it's re-encoded in the background, then the smooth copy takes over at the
@@ -68,9 +57,9 @@ Before 1.0, minor versions (0.2, 0.3) add features and patch versions (0.3.1,
 
 0.2.0 was tagged but never published; its changes are in 0.2.1.
 
-## 0.1.0 and 0.1.1
+## 0.1.1 (2026-10-04)
 
-The first releases: `ScrollVideo`, `Section` and `ScrollFrames`, in-browser
-re-encoding with caching, the `vidscroll encode` CLI, the
-`useScrollVideoState` and `useScrollVideoUpdate` hooks, and the
+The first releases (0.1.0 and 0.1.1): `ScrollVideo`, `Section` and
+`ScrollFrames`, in-browser re-encoding with caching, the `vidscroll encode`
+CLI, the `useScrollVideoState` and `useScrollVideoUpdate` hooks, and the
 `--video-progress` variable.
