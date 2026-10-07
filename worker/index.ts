@@ -1,4 +1,4 @@
-const SITE = "https://nikhilswain.github.io/vidscroll";
+const SITE = "https://vidscroll.js.org";
 
 export default {
   async fetch(request: Request): Promise<Response> {

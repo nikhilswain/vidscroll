@@ -6,12 +6,12 @@ import { vidscrollTheme } from "./src/lib/shiki-theme.mjs";
 import { codeMeta } from "./src/lib/shiki-transformers.mjs";
 import { demosDev } from "./src/lib/demos-dev.mjs";
 
-const base = process.env.SITE_BASE ?? "/vidscroll";
+const base = process.env.SITE_BASE ?? "/";
 
 const src = (path) => fileURLToPath(new URL(`../src/${path}`, import.meta.url));
 
 export default defineConfig({
-  site: process.env.SITE_URL ?? "https://nikhilswain.github.io",
+  site: process.env.SITE_URL ?? "https://vidscroll.js.org",
   base,
   trailingSlash: "ignore",
   publicDir: "../demo/public",

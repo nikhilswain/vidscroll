@@ -6,7 +6,6 @@ process.env.VITE_ASSET_BASE ??= "/";
 
 export default defineConfig({
   root: "demo",
-  publicDir: process.env.VITE_ASSET_BASE === "/" ? "public" : false,
   plugins: [react()],
   resolve: {
     alias: [

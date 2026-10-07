@@ -15,8 +15,8 @@ fade in and out along the way.
   footage, and CSS variables that follow the scroll, without scroll code.
 - Clear errors for things that can't work, like YouTube links or a wrong path.
 
-**[Documentation](https://nikhilswain.github.io/vidscroll/docs/start/introduction/)** ·
-**[Demos](https://nikhilswain.github.io/vidscroll/#demos)**
+**[Documentation](https://vidscroll.js.org/docs/start/introduction/)** ·
+**[Demos](https://vidscroll.js.org/#demos)**
 
 ```bash
 npm i vidscroll
@@ -61,7 +61,7 @@ The package is marked `"use client"`, so you can import `ScrollVideo` and
 components can only pass plain data, so give `easing` by name
 (`easing="outCubic"`), and put callbacks (`onLoad`, `onError`, a `loader`
 function) and the hooks in your own component that starts with
-`"use client"`. [More on Next.js →](https://nikhilswain.github.io/vidscroll/docs/get-started/nextjs/)
+`"use client"`. [More on Next.js →](https://vidscroll.js.org/docs/get-started/nextjs/)
 
 ## Your video
 
@@ -84,7 +84,7 @@ npx vidscroll encode public/videos/hero.mp4
 
 Use `hero.scroll.mp4` as the `src`. vidscroll sees that it's already prepared
 and uses it as-is. Options: `--resolution` (default 720), `--gop`, `--crf`
-and `--fps`. [CLI reference →](https://nikhilswain.github.io/vidscroll/docs/reference/cli/)
+and `--fps`. [CLI reference →](https://vidscroll.js.org/docs/reference/cli/)
 
 `src` must be a video file. YouTube or Vimeo page links, HLS/DASH streams
 and wrong paths show an error. A file on another domain needs CORS headers
@@ -105,7 +105,7 @@ if prepared with the CLI.
 | `loader` | built-in | `false`, a React node, or `(state, builtIn) => node` |
 | `onLoad`, `onError` | | Called once the video is ready, or with a `VidscrollError` |
 
-[All props, including `fps`, `fullPreload` and smoothing →](https://nikhilswain.github.io/vidscroll/docs/react/scroll-video/)
+[All props, including `fps`, `fullPreload` and smoothing →](https://vidscroll.js.org/docs/react/scroll-video/)
 
 ## Sections and styling
 
@@ -128,8 +128,8 @@ across its range, so plain CSS can animate anything as you scroll:
 
 The outer block carries `--video-progress` (0–1 across the whole video) for
 anything else, like a progress bar.
-[Section →](https://nikhilswain.github.io/vidscroll/docs/react/section/) ·
-[Styling reference →](https://nikhilswain.github.io/vidscroll/docs/reference/styling/)
+[Section →](https://vidscroll.js.org/docs/react/section/) ·
+[Styling reference →](https://vidscroll.js.org/docs/reference/styling/)
 
 ## Hooks
 
@@ -149,7 +149,7 @@ function Timecode() {
 }
 ```
 
-[Hooks →](https://nikhilswain.github.io/vidscroll/docs/react/hooks/)
+[Hooks →](https://vidscroll.js.org/docs/react/hooks/)
 
 ## Image sequences
 
@@ -177,8 +177,8 @@ The `<vid-scroll>` element does the same on any page:
 With a bundler, `import "vidscroll/element"` instead. Attributes match the
 React props in kebab-case. For full control, `vidscroll/core` exposes the
 controller behind both.
-[&lt;vid-scroll&gt; →](https://nikhilswain.github.io/vidscroll/docs/without-react/element/) ·
-[vidscroll/core →](https://nikhilswain.github.io/vidscroll/docs/without-react/core/)
+[&lt;vid-scroll&gt; →](https://vidscroll.js.org/docs/without-react/element/) ·
+[vidscroll/core →](https://vidscroll.js.org/docs/without-react/core/)
 
 ## Good to know
 
@@ -190,11 +190,11 @@ controller behind both.
   re-encoding needs WebCodecs (Chrome and Edge 94+, Firefox 130+ on desktop,
   Safari 16.4+); elsewhere, prepare videos with the CLI. Real Safari and iOS
   haven't been tested yet.
-  [Browser support →](https://nikhilswain.github.io/vidscroll/docs/reference/browser-support/)
+  [Browser support →](https://vidscroll.js.org/docs/reference/browser-support/)
 - Everything is typed in TypeScript.
 
 Something not working? See
-[Troubleshooting](https://nikhilswain.github.io/vidscroll/docs/troubleshooting/).
+[Troubleshooting](https://vidscroll.js.org/docs/troubleshooting/).
 
 ## Credits
 

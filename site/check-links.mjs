@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist-site");
-const base = (process.env.SITE_BASE ?? "/vidscroll").replace(/\/$/, "");
-const siteUrl = `${(process.env.SITE_URL ?? "https://nikhilswain.github.io").replace(/\/$/, "")}${base}`;
+const base = (process.env.SITE_BASE ?? "/").replace(/\/$/, "");
+const siteUrl = `${(process.env.SITE_URL ?? "https://vidscroll.js.org").replace(/\/$/, "")}${base}`;
 const origin = "http://site.local";
 
 const htmlFiles = (dir) =>

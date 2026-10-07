@@ -13,6 +13,7 @@ export function demosDev(base) {
           configFile: fileURLToPath(new URL("../../../vite.config.ts", import.meta.url)),
           base: prefix,
           appType: "mpa",
+          publicDir: false,
           logLevel: "warn",
           server: { middlewareMode: true, hmr: { server: server.httpServer ?? undefined } },
         });

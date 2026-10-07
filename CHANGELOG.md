@@ -6,7 +6,7 @@ Before 1.0, minor versions (0.2, 0.3) add features and patch versions (0.3.1,
 ## 0.3.3 (2026-10-07)
 
 - New documentation site with guides, a reference, a video checker and a
-  playground: https://nikhilswain.github.io/vidscroll/
+  playground: https://vidscroll.js.org/
 - The README is now a short guide that links to the docs, and the package
   homepage points at the docs site.
 - `ScrollFramesProps` no longer lists `preview`, an internal option that

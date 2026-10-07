@@ -3,7 +3,7 @@
 ```bash
 npm install
 npm run dev         # demos (demo/) at http://localhost:5173
-npm run site:dev    # docs site and demos at http://localhost:4321/vidscroll/
+npm run site:dev    # docs site and demos at http://localhost:4321/
 npm run build       # library → dist/
 npm run typecheck
 npm run lint
