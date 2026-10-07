@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
-import { INITIAL_LOADER, LOADER_HINT, createScrollVideo, loaderLabel, previewSource } from "../core/controller";
+import { INITIAL_LOADER, LOADER_HINT, createScrollVideo, initialHeight, loaderLabel, previewSource } from "../core/controller";
 import type { LoaderState, ScrollVideoController, ScrollVideoOptions } from "../core/controller";
 import { ScrollVideoContext } from "./context";
 import { BaseStyles } from "./styles";
@@ -134,7 +134,7 @@ export function ScrollVideo({
   return (
     <ScrollVideoContext.Provider value={contextValue}>
       <BaseStyles />
-      <div ref={containerRef} data-vidscroll="" className={className} style={style}>
+      <div ref={containerRef} data-vidscroll="" className={className} style={{ height: initialHeight(options.length), ...style }}>
         <div ref={stageRef} data-vidscroll-stage="">
           {media}
           <div data-vidscroll-overlay="">{children}</div>

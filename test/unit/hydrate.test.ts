@@ -36,4 +36,19 @@ describe("ScrollVideo server rendering", () => {
     act(() => root.unmount());
     container.remove();
   });
+
+  it("renders the final height on the server when length is explicit", () => {
+    const height = (length?: string | number, style?: Record<string, string>) => {
+      const html = renderToString(createElement(ScrollVideo, { src: "/video.mp4", length, style }));
+      const box = document.createElement("div");
+      box.innerHTML = html;
+      return box.querySelector<HTMLElement>("[data-vidscroll]")!.style.height;
+    };
+    expect(height("400vh")).toBe("calc(400dvh + 100svh)");
+    expect(height("2000px")).toBe("calc(2000px + 100svh)");
+    expect(height(1500)).toBe("calc(1500px + 100svh)");
+    expect(height("auto")).toBe("");
+    expect(height(undefined)).toBe("");
+    expect(height("400vh", { height: "900px" })).toBe("900px");
+  });
 });

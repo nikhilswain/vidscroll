@@ -99,6 +99,14 @@ export const loaderLabel = ({ phase, progress }: LoaderState) =>
 
 export const LOADER_HINT = "Scrubbing gets smoother once this finishes";
 
+export function initialHeight(length: ScrollVideoOptions["length"]): string | undefined {
+  if (typeof length === "number") return Number.isFinite(length) ? `calc(${Math.max(0, length)}px + 100svh)` : undefined;
+  const match = /^\s*([\d.]+)\s*(px|vh|svh|lvh|dvh)?\s*$/.exec(length ?? "");
+  if (!match) return undefined;
+  const value = Number(match[1]);
+  return `calc(${value}${match[2] && match[2] !== "px" ? "dvh" : "px"} + 100svh)`;
+}
+
 export function previewSource(src: string): string | null {
   try {
     checkSourceUrl(src);
