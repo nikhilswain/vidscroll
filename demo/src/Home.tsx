@@ -6,6 +6,7 @@ import { DEMOS } from "./demos";
 import { highlight } from "./highlight";
 import { REPO_URL } from "./TopBar";
 import "./home.css";
+import { asset } from "./asset";
 
 const INSTALL = "npm i vidscroll";
 
@@ -40,7 +41,7 @@ export function Home() {
   return (
     <main className="home">
       <ScrollVideo
-        src="/commute.mp4"
+        src={asset("commute.mp4")}
         length="320vh"
         easing={startPastFadeIn}
         smoothScroll

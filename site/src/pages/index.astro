@@ -8,8 +8,7 @@ import { DEMO_META } from "../../../demo/src/demo-meta";
 import { withBase } from "../lib/url";
 import "../styles/home.css";
 
-const OLD_DEMOS = "https://vidscroll.ze-ro.workers.dev";
-const demoHref = (slug: string, href?: string) => (href ? `${OLD_DEMOS}${href}` : `${OLD_DEMOS}/#/${slug}`);
+const demoHref = (slug: string, href?: string) => withBase(href ? `demos${href}` : `demos/#/${slug}`);
 const docs = withBase("docs/start/introduction/");
 ---
 <SiteLayout title="vidscroll: video that plays as you scroll" description="Scroll-scrubbed video for React and plain HTML. Smooth on any MP4 or WebM: videos with sparse keyframes are re-encoded in the browser automatically.">

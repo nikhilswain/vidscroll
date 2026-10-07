@@ -62,7 +62,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "site:dev": "astro dev --root site",
-    "site:build": "astro build --root site && pagefind --site dist-site",
+    "site:build": "astro build --root site && npm run site:demos && pagefind --site dist-site",
+    "site:demos": "node site/build-demos.mjs",
     "site:preview": "astro preview --root site"
   },
   "peerDependencies": {

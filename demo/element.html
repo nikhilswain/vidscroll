@@ -6,7 +6,7 @@
     <title>Without React · vidscroll</title>
     <meta name="description" content="A plain HTML page using the vid-scroll custom element." />
     <meta name="theme-color" content="#111014" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="%VITE_ASSET_BASE%favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -119,7 +119,7 @@
   </head>
   <body>
     <nav class="top">
-      <a href="/">← vidscroll demos</a>
+      <a href="%VITE_ASSET_BASE%">← vidscroll demos</a>
       <a href="https://github.com/nikhilswain/vidscroll/blob/main/demo/element.html" target="_blank" rel="noreferrer">Source</a>
     </nav>
 
@@ -139,7 +139,7 @@
 &lt;/vid-scroll&gt;</code></pre>
     </header>
 
-    <vid-scroll id="film" src="/commute.mp4" length="500vh" easing="inOutSine" fit="contain" smooth-scroll>
+    <vid-scroll id="film" src="%VITE_ASSET_BASE%commute.mp4" length="500vh" easing="inOutSine" fit="contain" smooth-scroll>
       <div class="chapters" role="group" aria-label="Chapters">
         <button type="button" data-at="0">Doors</button>
         <button type="button" data-at="4.6">Carriage</button>

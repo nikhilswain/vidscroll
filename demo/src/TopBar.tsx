@@ -10,11 +10,11 @@ function GitHubIcon() {
   );
 }
 
-export function TopBar({ demo }: { demo?: Demo }) {
+export function TopBar({ demo, homeHref = "#/" }: { demo?: Demo; homeHref?: string }) {
   return (
     <header className="topbar">
       <nav className="topbar__crumbs" aria-label="Demos">
-        <a href="#/" className="topbar__home">
+        <a href={homeHref} className="topbar__home">
           vidscroll
         </a>
         {demo && (

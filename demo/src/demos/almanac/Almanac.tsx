@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { ScrollVideo, useScrollVideoUpdate } from "vidscroll";
 import "./almanac.css";
+import { asset } from "../../asset";
 
 const START_MIN = 18 * 60 + 42;
 const SPAN_MIN = 49;
@@ -85,7 +86,7 @@ function Readout() {
 
 export function Almanac() {
   return (
-    <ScrollVideo src="/catAnime.mp4" length="2000vh" smoothScroll>
+    <ScrollVideo src={asset("catAnime.mp4")} length="2000vh" smoothScroll>
       <div className="almanac-shade" aria-hidden="true" />
       <Readout />
     </ScrollVideo>

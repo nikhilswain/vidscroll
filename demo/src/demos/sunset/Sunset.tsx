@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { ScrollVideo, Section } from "vidscroll";
 import type { LoaderState } from "vidscroll";
 import "./sunset.css";
+import { asset } from "../../asset";
 
 const LEFT = [
   "Every evening, the same fence,",
@@ -71,7 +72,7 @@ function Loader({ phase, progress, background, error }: LoaderState) {
 export function Sunset() {
   return (
     <ScrollVideo
-      src="/catAnime.mp4"
+      src={asset("catAnime.mp4")}
       length="2400vh"
       smoothScroll
       loader={(state) => <Loader {...state} />}

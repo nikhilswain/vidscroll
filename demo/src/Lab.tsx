@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { deviceLine } from "./device";
+import { asset } from "./asset";
 
 type FrameVideo = HTMLVideoElement & {
   requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
@@ -28,7 +29,7 @@ interface Kit {
   sink: import("mediabunny").CanvasSink | null;
 }
 
-const SRC = "/commute.mp4";
+const SRC = asset("commute.mp4");
 const RUN_MS = 4000;
 
 const TESTS: Test[] = [

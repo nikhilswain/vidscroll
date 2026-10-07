@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from "react";
 import { ScrollVideo, Section, useScrollVideo, useScrollVideoUpdate } from "vidscroll";
 import { TRAIN_CREDIT } from "../../credits";
 import "./commute.css";
+import { asset } from "../../asset";
 
 const CHAPTERS = [
   { title: "Doors", at: 0 },
@@ -72,7 +73,7 @@ export function Commute() {
   const portrait = usePortrait();
   return (
     <ScrollVideo
-      src="/commute.mp4"
+      src={asset("commute.mp4")}
       fit={portrait ? "contain" : "cover"}
       length="1700vh"
       smoothScroll

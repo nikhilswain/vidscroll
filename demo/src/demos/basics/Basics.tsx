@@ -1,6 +1,7 @@
 import { ScrollVideo, Section } from "vidscroll";
 import { TRAIN_CREDIT } from "../../credits";
 import "./basics.css";
+import { asset } from "../../asset";
 
 export function Basics() {
   return (
@@ -13,7 +14,7 @@ export function Basics() {
         </p>
       </header>
 
-      <ScrollVideo src="/catAnime.mp4" length="500vh" smoothScroll>
+      <ScrollVideo src={asset("catAnime.mp4")} length="500vh" smoothScroll>
         <Section start={0} end={0.33} className="basics__panel">
           <h2>Intro</h2>
         </Section>
@@ -33,7 +34,7 @@ export function Basics() {
         </p>
       </section>
 
-      <ScrollVideo src="/commute.mp4" length="300vh" fit="contain" smoothScroll>
+      <ScrollVideo src={asset("commute.mp4")} length="300vh" fit="contain" smoothScroll>
         <Section start={0} end={1} className="basics__panel">
           <h2>A second video</h2>
         </Section>
