@@ -1,0 +1,93 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: React
+description: Add a scroll video to any React 18 or 19 app.
+slug: get-started/react
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Example from "../../../components/Example.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link };
+
+## Install
+
+<PackageTabs pkg="vidscroll" />
+
+vidscroll works with React 18 and 19 in any bundler setup, such as Vite,
+Next.js or Astro. Its one dependency, the video library it uses to read and
+re-encode files, is loaded in the browser only when a video needs it.
+
+## Add a video
+
+Put a video file where your site serves static files, such as `public/`, and
+give `ScrollVideo` its URL:
+
+```tsx title="Hero.tsx"
+import { ScrollVideo } from "vidscroll";
+
+export function Hero() {
+  return <ScrollVideo src="/videos/hero.mp4" length="400vh" />;
+}
+```
+
+The component takes up `length` of scrolling plus one screen. While you scroll
+through it, the video stays pinned and follows the scroll. Content above and
+below it scrolls normally.
+
+## Show content over the video
+
+Children of `ScrollVideo` are drawn over the video. Wrap them in `Section` to
+show them over part of the scroll:
+
+```tsx title="Hero.tsx"
+import { ScrollVideo, Section } from "vidscroll";
+
+export function Hero() {
+  return (
+    <ScrollVideo src="/videos/hero.mp4" length="400vh">
+      <Section start={0} end={0.3}>
+        <h2>Doors close</h2>
+      </Section>
+      <Section start={0.55} end={0.9}>
+        <h2>Open water</h2>
+      </Section>
+    </ScrollVideo>
+  );
+}
+```
+
+<Example name="basic" />
+
+`start` and `end` are positions in the scroll, from 0 to 1. Sections can also
+use seconds (`fromTime`, `toTime`) or frame numbers.
+
+## Prepare the video
+
+Any MP4 or WebM works: videos that are slow to scrub are re-encoded in the
+browser on the first visit and cached. For production, prepare the file once
+instead, so every visitor gets smooth scrubbing straight away:
+
+<PackageTabs pkg="ffmpeg-static" dev />
+
+```bash
+npx vidscroll encode hero.mp4
+```
+
+This writes `hero.scroll.mp4` next to the original. `ffmpeg-static` provides
+ffmpeg for the command; if ffmpeg is already installed on your system, you can
+skip it.
+
+<Callout title="Content below the video">
+  Set `length` explicitly when other content follows the video. With the
+  default `"auto"`, the length depends on the video's duration, which is only
+  known once it loads, so anything below moves down at that point.
+</Callout>
+
+## Next steps
+
+- [ScrollVideo](/docs/react/scroll-video/): every option, with live examples.
+- [Next.js](/docs/get-started/nextjs/): server components and client components.

@@ -1,0 +1,29 @@
+<script>
+  let last = "";
+  const report = () => {
+    const block = document.querySelector<HTMLElement>("[data-vidscroll]") ?? document.querySelector<HTMLElement>("vid-scroll");
+    if (block) {
+      const root: ParentNode = block.shadowRoot ?? block;
+      const video = root.querySelector<HTMLVideoElement>(
+        "video[data-vidscroll-media]:not([data-vidscroll-next]):not([data-vidscroll-preview])"
+      );
+      const state = {
+        type: "vidscroll-example",
+        progress: Number.parseFloat(block.style.getPropertyValue("--video-progress")) || 0,
+        time: video?.currentTime ?? 0,
+        duration: video && Number.isFinite(video.duration) ? video.duration : 0,
+        active: [...block.querySelectorAll("[data-vidscroll-section][data-active]")].map((el) => el.getAttribute("data-vidscroll-section")),
+        screens: Math.max(block.offsetHeight - innerHeight, 0) / innerHeight,
+        scrolled: Math.min(Math.max(-block.getBoundingClientRect().top, 0), Math.max(block.offsetHeight - innerHeight, 0)) / innerHeight,
+        ready: !root.querySelector("[data-vidscroll-loader]:not([data-background]):not([hidden])") && !block.hasAttribute("data-phase"),
+      };
+      const key = JSON.stringify(state);
+      if (key !== last) {
+        last = key;
+        parent.postMessage(state, location.origin);
+      }
+    }
+    requestAnimationFrame(report);
+  };
+  requestAnimationFrame(report);
+</script>

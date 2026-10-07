@@ -1,0 +1,103 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Plain HTML
+description: Add a scroll video to any page with the <vid-scroll> element, no framework needed.
+slug: get-started/html
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Example from "../../../components/Example.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link };
+
+<Callout kind="warning" title="Experimental">
+  The element is new in 0.3. Its attributes and events may still change
+  before 1.0. The React components are the stable API.
+</Callout>
+
+`<vid-scroll>` is a custom element, so it works anywhere you can add HTML and
+a script tag: plain pages, site builders and template engines. It runs the
+same loading, re-encoding and scrubbing as the React component.
+
+## Add the script
+
+From a CDN, with no build step:
+
+```html title="index.html"
+<script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll@0.3/dist/cdn/vidscroll-element.js"></script>
+```
+
+Or from npm, if your site has a bundler:
+
+<PackageTabs pkg="vidscroll" />
+
+```js title="main.js"
+import "vidscroll/element";
+```
+
+The CDN version is pinned to `0.3` so a future release can't change your page
+unexpectedly.
+
+## Add the element
+
+```html title="index.html"
+<vid-scroll src="/videos/hero.mp4" length="400vh">
+  <vid-scroll-section start="0" end="0.3">
+    <h2>Doors close</h2>
+  </vid-scroll-section>
+  <vid-scroll-section start="0.55" end="0.9">
+    <h2>Open water</h2>
+  </vid-scroll-section>
+</vid-scroll>
+```
+
+<Example name="element" />
+
+Everything inside `<vid-scroll>` stays ordinary page content, shown over the
+pinned video, so your CSS styles it as usual. Sections get a `data-active`
+attribute while active and a `--progress` variable from 0 to 1 across their
+range.
+
+## Attributes
+
+The element takes the same options as the React component, written in
+kebab-case:
+
+| Attribute | Example | Meaning |
+| --- | --- | --- |
+| `src` | `"/videos/hero.mp4"` | Video file URL |
+| `length` | `"400vh"` | Scrolling that covers the whole video |
+| `easing` | `"inOutSine"` | Curve from scroll to video time |
+| `fit` | `"contain"` | `cover` (default) or `contain` |
+| `smooth-scroll` | (no value) | Eased mouse-wheel scrolling |
+| `poster` | `"/poster.jpg"` | Image while loading, `"none"` for none |
+| `optimize` | `"false"` or `"wait"` | Skip the re-encode, or wait for it |
+| `loader` | `"none"` | Hide the loading overlay |
+
+Sections take `start` and `end` (0 to 1), `from-time` and `to-time`
+(seconds), or `from-frame` and `to-frame`.
+
+## From JavaScript
+
+```js title="main.js"
+const video = document.querySelector("vid-scroll");
+
+video.scrollToTime(12);
+
+video.addEventListener("vidscroll-enter", (event) => {
+  console.log("entered", event.detail.id);
+});
+```
+
+The element fires `vidscroll-load`, `vidscroll-ready`, `vidscroll-loader` and
+`vidscroll-error`; sections fire `vidscroll-enter` and `vidscroll-exit`. All of
+them bubble.
+
+## Next steps
+
+- [How it works](/docs/start/how-it-works/): loading, keyframes and re-encoding.
+- [ScrollVideo](/docs/react/scroll-video/): the options explained in depth (the
+  element takes the same ones).

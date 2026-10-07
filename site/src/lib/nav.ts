@@ -20,10 +20,10 @@ export const NAV: NavGroup[] = [
   {
     title: "Get started",
     items: [
-      { title: "React" },
-      { title: "Next.js" },
-      { title: "Astro" },
-      { title: "Plain HTML", experimental: true },
+      { title: "React", slug: "get-started/react" },
+      { title: "Next.js", slug: "get-started/nextjs" },
+      { title: "Astro", slug: "get-started/astro" },
+      { title: "Plain HTML", slug: "get-started/html", experimental: true },
     ],
   },
   {

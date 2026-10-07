@@ -1,0 +1,86 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Next.js
+description: Use vidscroll in the App Router, including from server components.
+slug: get-started/nextjs
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+
+export const components = { pre: Pre, a: Link };
+
+## Install
+
+<PackageTabs pkg="vidscroll" />
+
+## Use it in a server component
+
+The package is marked `"use client"`, so you can import `ScrollVideo` and
+`Section` straight into a server component, such as a page in the App Router.
+Next.js renders the markup on the server and the video starts in the browser.
+
+```tsx title="app/page.tsx"
+import { ScrollVideo, Section } from "vidscroll";
+
+export default function Page() {
+  return (
+    <main>
+      <ScrollVideo src="/videos/hero.mp4" length="400vh" easing="inOutSine">
+        <Section start={0} end={0.3}>
+          <h2>Doors close</h2>
+        </Section>
+      </ScrollVideo>
+    </main>
+  );
+}
+```
+
+Put the video in `public/videos/` so it's served from `/videos/hero.mp4`.
+
+## Functions and hooks need a client component
+
+Server components can only pass plain data to client components. That covers
+most props, but not these:
+
+- a custom `easing` function (use a preset name such as `"inOutSine"` instead)
+- `onLoad`, `onError` and a `loader` function
+- the hooks `useScrollVideo`, `useScrollVideoState` and `useScrollVideoUpdate`
+
+For those, put the video in your own component that starts with
+`"use client"`:
+
+```tsx title="app/hero.tsx"
+"use client";
+
+import { ScrollVideo, Section, useScrollVideoState } from "vidscroll";
+
+function Timecode() {
+  const { time } = useScrollVideoState();
+  return <p>{time.toFixed(1)} s</p>;
+}
+
+export function Hero() {
+  return (
+    <ScrollVideo
+      src="/videos/hero.mp4"
+      length="400vh"
+      easing={(t) => t * t}
+      onLoad={({ source }) => console.log("served as", source)}
+    >
+      <Section start={0} end={1}>
+        <Timecode />
+      </Section>
+    </ScrollVideo>
+  );
+}
+```
+
+Then use `<Hero />` from any page. Hooks work in any component rendered inside
+`ScrollVideo`.
+
+## Next steps
+
+- [ScrollVideo](/docs/react/scroll-video/): every option, with live examples.
+- [How it works](/docs/start/how-it-works/): loading, keyframes and re-encoding.

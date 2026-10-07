@@ -14,8 +14,10 @@ interface Props {
   caption?: string;
   file?: string;
 }
-const { name, poster = "posters/train.jpg", controls = false, caption, file = "Example.tsx" } = Astro.props;
+const { name, poster = "posters/train.jpg", controls = false, caption, file } = Astro.props;
 const entry = EXAMPLES[name];
+const lang = entry.lang ?? "tsx";
+const fileName = file ?? (lang === "html" ? "index.html" : "Example.tsx");
 const src = withBase(`examples/${name}/`);
 const code = entry.source ? displaySource(entry.source).trim() : "";
 const lines = code.split("\n").length;
@@ -98,10 +100,10 @@ const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segm
   {(code || controls) && (
     <div class="code example__code" data-code data-collapsed={lines > 25 ? "" : undefined}>
       <div class="code__head">
-        <span class="code__file">{file}</span>
+        <span class="code__file">{fileName}</span>
         <CopyButton />
       </div>
-      {controls ? <pre class="astro-code" data-language="tsx" data-generated><code /></pre> : <Code code={code} lang="tsx" theme={vidscrollTheme} transformers={[codeMeta]} />}
+      {controls ? <pre class="astro-code" data-language="tsx" data-generated><code /></pre> : <Code code={code} lang={lang} theme={vidscrollTheme} transformers={[codeMeta]} />}
     </div>
   )}
   {caption && <figcaption>{caption}</figcaption>}

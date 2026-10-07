@@ -1,16 +1,13 @@
 ---
-import ExampleRoot from "../../components/ExampleRoot";
 import ExampleReporter from "../../components/ExampleReporter.astro";
 import { EXAMPLES } from "../../examples";
+import { withBase } from "../../lib/url";
 import "../../styles/base.css";
 import "../../styles/example.css";
 
-export function getStaticPaths() {
-  return Object.entries(EXAMPLES)
-    .filter(([, entry]) => entry.component)
-    .map(([name]) => ({ params: { name } }));
-}
-const { name } = Astro.params;
+const markup = EXAMPLES.element
+  .source!.replace(/^<script[^>]*><\/script>\s*/, "")
+  .replace(/src="\/([^"]+)"/g, (_, path) => `src="${withBase(path)}"`);
 ---
 <!doctype html>
 <html lang="en">
@@ -18,10 +15,13 @@ const { name } = Astro.params;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>{EXAMPLES[name].title}</title>
+    <title>{EXAMPLES.element.title}</title>
   </head>
   <body>
-    <ExampleRoot client:only="react" name={name} />
+    <Fragment set:html={markup} />
+    <script>
+      import "vidscroll/element";
+    </script>
     <ExampleReporter />
   </body>
 </html>

@@ -16,6 +16,7 @@ function optionsFromQuery() {
 }
 
 export default function ExampleRoot({ name }: { name: string }) {
-  const Component = EXAMPLES[name].component as ComponentType<Record<string, unknown>>;
+  const Component = EXAMPLES[name].component as ComponentType<Record<string, unknown>> | undefined;
+  if (!Component) return null;
   return <Component {...(name === "options" ? optionsFromQuery() : {})} />;
 }
