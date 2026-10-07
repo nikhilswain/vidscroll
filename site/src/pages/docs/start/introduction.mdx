@@ -87,8 +87,10 @@ It is less suited to:
   with the CLI.
 - **Background loops that play on their own.** A plain `<video autoplay muted
   loop>` does that with less work.
-- **YouTube, Vimeo and other video pages.** Their streams can't be read by
-  other sites. Use a file you host.
+- **YouTube, Vimeo and similar watch pages.** A page that plays a video isn't
+  the video file, and their streams can't be read by other sites. Any direct
+  link to a video file works, on your own site or on a CDN or another domain.
+  Files on other domains scrub best when the server allows CORS.
 
 <Callout title="Try it on a phone">
   Most visitors scroll on phones. Open this page on yours: the examples start
