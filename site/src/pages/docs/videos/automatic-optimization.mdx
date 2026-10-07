@@ -1,0 +1,138 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Automatic optimization
+description: How vidscroll re-encodes slow-to-scrub videos in the browser, caches them, and what you can configure.
+slug: videos/automatic-optimization
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Flow from "../../../components/Flow.astro";
+import Callout from "../../../components/Callout.astro";
+import PropsTable from "../../../components/PropsTable.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+You can give `ScrollVideo` any MP4 or WebM, including one exported straight
+from an editor. If its keyframes are too far apart for smooth scrubbing
+([why that matters](/docs/videos/why-seeking-stutters/)), vidscroll fixes the
+file in the visitor's browser. This is on by default.
+
+## What happens
+
+<Flow
+  label="Automatic optimization"
+  steps={[
+    { title: "Check the cache", text: "If this file was optimized on an earlier visit, that copy is used and nothing is downloaded." },
+    { title: "Download", text: "Otherwise the whole file is fetched, so its structure can be read." },
+    { title: "Check keyframes", text: "Gaps of 0.5 s or less: the file is used as it is." },
+    { title: "Re-encode", text: "Otherwise the browser's video encoder (WebCodecs) makes a copy with close keyframes." },
+    { title: "Swap and store", text: "The copy replaces the original at the same frame and is saved for next time." },
+  ]}
+/>
+
+## What visitors see
+
+While the re-encode runs, the **original video is already on screen** and can
+be scrolled. Scrolling forward plays it smoothly; scrolling backward is choppy
+until the new copy arrives. A small badge in the corner shows the progress.
+When the copy is ready, it takes over at exactly the frame on screen, so the
+switch isn't visible.
+
+In our tests, a 60-second 1080p clip took about 8 to 10 seconds to re-encode on
+a desktop computer and about 20 seconds on an Android phone. Shorter clips are
+proportionally faster.
+
+To keep the loading overlay up until the smooth copy is ready instead, use
+`wait`:
+
+```tsx title="Hero.tsx"
+<ScrollVideo src="/videos/hero.mp4" optimize={{ wait: true }} />
+```
+
+## The re-encoded copy
+
+<Table>
+  <thead>
+    <tr><th>Property</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Keyframes</td><td>One every 0.25 s</td></tr>
+    <tr><td>Resolution</td><td>Short side at most 720 px (never enlarged)</td></tr>
+    <tr><td>Frame rate</td><td>At most 30 fps, or 15 fps for videos over two minutes</td></tr>
+    <tr><td>Codec</td><td>H.264</td></tr>
+    <tr><td>Audio</td><td>Removed</td></tr>
+  </tbody>
+</Table>
+
+The browser encoder favours speed over size: for the clip above, the copy it
+made was 18.6 MB, where the CLI produces 11.9 MB at the same resolution. That
+file lives only in the visitor's browser, but it's one more reason to
+[prepare videos ahead of time](/docs/videos/cli/) for production.
+
+## Caching
+
+The optimized copy is saved in the browser's Cache Storage, so later visits
+load it straight away without downloading or re-encoding again. The cache entry
+is tied to:
+
+- the video's URL,
+- the optimization settings, so changing `maxResolution`, `maxFps` or
+  `maxKeyframeGap` creates a new copy,
+- the file's identity, read from its `ETag`, `Last-Modified` or
+  `Content-Length` header, so replacing the file on the server starts over.
+
+<Callout kind="warning" title="No cache without those headers">
+  If the server sends none of `ETag`, `Last-Modified` and `Content-Length`,
+  vidscroll can't tell whether the file changed, so it doesn't cache it and
+  the re-encode runs on every visit. Most hosts and CDNs send them.
+</Callout>
+
+Caching also needs a secure page (HTTPS or `localhost`), like WebCodecs itself.
+
+## Options
+
+Pass an object to `optimize` to change the defaults, or `false` to turn
+optimization off:
+
+```tsx title="Hero.tsx"
+<ScrollVideo src="/videos/hero.mp4" optimize={{ maxResolution: 1080, cache: true }} />
+```
+
+<PropsTable
+  rows={[
+    { name: "maxKeyframeGap", type: "number", default: "0.5", description: "Largest keyframe gap, in seconds, that counts as fine. Files above it are re-encoded." },
+    { name: "maxResolution", type: "number", default: "720", description: "Short side of the re-encoded copy, in pixels. Never enlarges." },
+    { name: "maxFps", type: "number", default: "30", description: "Frame rate cap for the copy. 15 for videos over two minutes unless set." },
+    { name: "cache", type: "boolean", default: "true", description: "Save the copy for later visits." },
+    { name: "wait", type: "boolean", default: "false", description: "Keep the loading overlay until the copy is ready, instead of showing the original meanwhile." },
+  ]}
+/>
+
+## When it can't run
+
+In each of these cases vidscroll still shows the video, and says why in the
+browser console:
+
+<Table>
+  <thead>
+    <tr><th>Situation</th><th>What happens</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>The browser has no WebCodecs</td><td>The original is used; scrubbing is only as smooth as the file.</td></tr>
+    <tr><td>The re-encode fails</td><td>The original stays on screen.</td></tr>
+    <tr><td>The file is on another site without CORS</td><td>vidscroll can't read it, so it streams the file directly instead.</td></tr>
+    <tr><td>Several raw videos on one page in Firefox</td><td>Firefox may refuse to encode more than one at a time; the others keep their originals.</td></tr>
+    <tr><td><code>optimize={"{false}"}</code></td><td>The file is used as is, with a warning if its keyframes are far apart.</td></tr>
+    <tr><td><code>fullPreload={"{false}"}</code></td><td>The file is streamed directly: nothing is downloaded or re-encoded first.</td></tr>
+  </tbody>
+</Table>
+
+## When to rely on it
+
+Automatic optimization is ideal while building, for content that changes
+often, and for videos you don't control. For a production page with a fixed
+video, [pre-encode it with the CLI](/docs/videos/cli/): the file is smaller,
+every visitor gets smooth scrubbing on their first visit, and phones skip the
+work entirely.

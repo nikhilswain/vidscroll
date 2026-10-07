@@ -1,0 +1,130 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Pre-encoding with the CLI
+description: Prepare videos before you deploy, so every visitor gets smooth scrubbing on the first visit.
+slug: videos/cli
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+import Steps from "../../../components/Steps.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+`vidscroll encode` turns any video into one that scrubs smoothly: keyframes
+close together, a sensible size for the web, no audio. Run it once before you
+deploy, and visitors skip the [in-browser re-encode](/docs/videos/automatic-optimization/)
+entirely.
+
+## Set it up
+
+The command uses **ffmpeg**, the standard command-line video tool. vidscroll
+doesn't bundle it because it's a large native program, so you provide it. The
+`ffmpeg-static` package is the easiest way; it's only used on your machine or
+in CI, never shipped to visitors.
+
+<Steps>
+
+1. **Get ffmpeg.** Skip this if `ffmpeg` already works in your terminal.
+
+   <PackageTabs pkg="ffmpeg-static" dev />
+
+2. **Encode the video.**
+
+   ```bash
+   npx vidscroll encode public/videos/hero.mp4
+   ```
+
+   It prints a summary when it's done:
+
+   ```text title="Terminal"
+   public/videos/hero.scroll.mp4  11.9MB (input 4.7MB), keyframe every 10 frames
+   ```
+
+3. **Point `src` at the new file.**
+
+   ```tsx title="Hero.tsx"
+   <ScrollVideo src="/videos/hero.scroll.mp4" length="400vh" />
+   ```
+
+</Steps>
+
+vidscroll finds ffmpeg in this order: the `FFMPEG_PATH` environment variable,
+then the `ffmpeg-static` package, then `ffmpeg` on your `PATH`.
+
+## Options
+
+```bash
+npx vidscroll encode <input> [output] [options]
+```
+
+<Table>
+  <thead>
+    <tr><th>Option</th><th>Default</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>[output]</code></td><td>input name + <code>.scroll.mp4</code></td><td>Where to write the result. <code>hero.mov</code> becomes <code>hero.scroll.mp4</code>. An existing file is overwritten.</td></tr>
+    <tr><td><code>--resolution &lt;px&gt;</code></td><td><code>720</code></td><td>Short side of the output. Smaller videos are never enlarged.</td></tr>
+    <tr><td><code>--gop &lt;frames&gt;</code></td><td><code>10</code></td><td>Frames between keyframes. Lower is smoother to scrub and bigger.</td></tr>
+    <tr><td><code>--crf &lt;n&gt;</code></td><td><code>22</code></td><td>Quality: lower is better and bigger. 18 to 28 is the useful range.</td></tr>
+    <tr><td><code>--fps &lt;n&gt;</code></td><td>source rate</td><td>Frame rate cap. Faster sources are reduced; slower ones keep their rate.</td></tr>
+    <tr><td><code>-h</code>, <code>--help</code></td><td></td><td>Show the help.</td></tr>
+  </tbody>
+</Table>
+
+Write options with a space before the value (`--resolution 1080`), not with
+`=`.
+
+## Choosing settings
+
+The defaults suit most pages. Two things are worth adjusting:
+
+- **Resolution.** 720 keeps files small and looks fine on phones and in
+  smaller layouts. Use `--resolution 1080` when the video fills large screens
+  and detail matters; expect roughly twice the file size.
+- **Keyframe spacing.** The gap between keyframes is `gop` divided by the
+  frame rate: 10 frames at 30 fps is a third of a second. vidscroll accepts
+  gaps up to 0.5 s without re-encoding in the browser.
+
+<Callout kind="warning" title="Lowering the frame rate? Lower the gop too">
+  With `--fps 15` and the default `--gop 10`, keyframes end up 0.67 s apart,
+  above the 0.5 s limit, so browsers would re-encode the file anyway. Use a gop
+  of 7 or less at 15 fps.
+</Callout>
+
+## Size
+
+Close keyframes make files larger than a normal export. For a 60-second clip:
+
+<Table>
+  <thead>
+    <tr><th>File</th><th>Size</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Original export, 1080p</td><td>4.7 MB</td></tr>
+    <tr><td><code>vidscroll encode</code></td><td>11.9 MB</td></tr>
+    <tr><td><code>vidscroll encode --resolution 1080</code></td><td>22.4 MB</td></tr>
+  </tbody>
+</Table>
+
+To bring the size down: shorten the clip, lower `--resolution`, or raise
+`--crf` a little. Keep the keyframe spacing.
+
+## In a build step
+
+Encoding is fast enough to run in CI. Add a script and run it before building
+the site:
+
+```json title="package.json"
+{
+  "scripts": {
+    "videos": "vidscroll encode videos/hero.mp4 public/videos/hero.scroll.mp4"
+  }
+}
+```
+
+With `ffmpeg-static` in `devDependencies`, the same command works on any
+machine without installing ffmpeg separately.

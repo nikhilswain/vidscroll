@@ -45,9 +45,9 @@ export const NAV: NavGroup[] = [
   {
     title: "Preparing videos",
     items: [
-      { title: "Why seeking stutters" },
-      { title: "Automatic optimization" },
-      { title: "Pre-encoding with the CLI" },
+      { title: "Why seeking stutters", slug: "videos/why-seeking-stutters" },
+      { title: "Automatic optimization", slug: "videos/automatic-optimization" },
+      { title: "Pre-encoding with the CLI", slug: "videos/cli" },
     ],
   },
   {

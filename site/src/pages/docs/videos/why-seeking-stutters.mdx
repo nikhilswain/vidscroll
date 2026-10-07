@@ -1,0 +1,111 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Why seeking stutters
+description: Keyframes, what they cost when you scrub, and how to check your own video.
+slug: videos/why-seeking-stutters
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import KeyframeStrip from "../../../components/KeyframeStrip.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+If a scroll video feels choppy, the cause is almost always the file, not the
+page. This page explains why, and how to tell whether your video is affected.
+
+## Keyframes
+
+A video isn't stored as a stack of pictures. Every so often it stores a
+complete picture, a **keyframe**. The frames in between only store what
+changed since the frame before. That's what makes video files small.
+
+The catch: to show a frame in the middle, the browser has to go back to the
+keyframe before it and rebuild every frame up to the one you asked for.
+
+<KeyframeStrip
+  label="Exported from an editor or phone: a keyframe every few seconds"
+  every={4}
+  note="To show a frame just before the next keyframe, the browser decodes about 120 frames first (at 30 fps)."
+/>
+
+<KeyframeStrip
+  label="Prepared for scrubbing: a keyframe every third of a second"
+  every={0.33}
+  note="Any frame is at most about 10 frames from a keyframe."
+/>
+
+## Why scrubbing hits it so hard
+
+Normal playback moves forward one frame at a time, so the browser never has to
+go back. Scrubbing jumps to a new point on every scroll step, dozens of times a
+second, in both directions:
+
+- **Forward jumps** are slow when they cross into a new stretch between
+  keyframes.
+- **Backward jumps** are the worst: every step back means starting again from
+  an earlier keyframe.
+- **Large files** make each decode slower, especially on phones.
+
+The result is a video that lags behind the scroll, freezes on a frame, then
+catches up in a jump.
+
+## Is my video affected?
+
+vidscroll checks every video it loads. When the keyframes are too far apart, it
+says so in the browser console:
+
+```text title="Console"
+[vidscroll] "/videos/hero.mp4" isn't encoded for scrubbing (keyframes are up to 8.3s apart); re-encoding it in the browser. Pre-encode it with `npx vidscroll encode <file>` to skip this.
+```
+
+If you see this, the video is being fixed in the visitor's browser, and you can
+skip that step by [preparing the file](/docs/videos/cli/). No message means the
+file is already fine.
+
+You can also check a file yourself with `ffprobe`, which comes with a full
+ffmpeg install (not with the `ffmpeg-static` package). This lists the time of
+every keyframe:
+
+```bash
+ffprobe -v error -select_streams v:0 -skip_frame nokey -show_entries frame=pts_time -of csv=p=0 hero.mp4
+```
+
+## What counts as good
+
+vidscroll treats keyframes up to **0.5 seconds** apart as fine. That's the
+default of the `maxKeyframeGap` option. Closer keyframes make scrubbing
+smoother but the file bigger:
+
+<Table>
+  <thead>
+    <tr><th>The same 60 s clip</th><th>Size</th><th>Keyframes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Original export, 1080p</td><td>4.7 MB</td><td>8, one every 8.3 s</td></tr>
+    <tr><td>Prepared, 720p</td><td>11.9 MB</td><td>180, one every 0.33 s</td></tr>
+    <tr><td>Prepared, 1080p</td><td>22.4 MB</td><td>180, one every 0.33 s</td></tr>
+  </tbody>
+</Table>
+
+So a prepared file is usually a few times larger than the export. For scroll
+video that's the right trade: visitors download it once, and every frame after
+that is instant. Keep videos short (under about two minutes) and use 720p unless
+the video is the centre of the page on large screens.
+
+<Callout title="Everything else is secondary">
+  For scrubbing, keyframe spacing matters more than resolution, bitrate or
+  codec. Lowering the resolution of a file with sparse keyframes rarely fixes
+  the stutter; closer keyframes do.
+</Callout>
+
+## Two ways to fix it
+
+- [Automatic optimization](/docs/videos/automatic-optimization/): vidscroll
+  re-encodes the video in the visitor's browser and caches it. Nothing to do,
+  but first visits wait a few seconds for the best result.
+- [Pre-encoding with the CLI](/docs/videos/cli/): run one command before you
+  deploy, and every visitor gets smooth scrubbing straight away. Recommended for
+  production.
