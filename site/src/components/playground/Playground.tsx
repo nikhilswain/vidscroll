@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { easing } from "vidscroll";
+import { invertEasing, withTail } from "../../../../src/core/easing";
 import { highlight } from "../../../../demo/src/highlight";
 import {
   DEFAULT_CONFIG,
@@ -37,17 +38,6 @@ const curvePath = (fn: (t: number) => number, w: number, h: number, pad = 2) =>
     const t = i / 40;
     return `${i === 0 ? "M" : "L"}${(pad + t * (w - pad * 2)).toFixed(1)} ${(h - pad - fn(t) * (h - pad * 2)).toFixed(1)}`;
   }).join(" ");
-
-function invert(fn: (t: number) => number, value: number) {
-  let lo = 0;
-  let hi = 1;
-  for (let i = 0; i < 30; i++) {
-    const mid = (lo + hi) / 2;
-    if (fn(mid) < value) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) / 2;
-}
 
 function Segmented<T extends string>({ name, value, options, onChange }: { name: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
   return (
@@ -244,8 +234,8 @@ function Controls({ config, update, fileName, onFile, progress }: { config: Conf
 
 function Timeline({ config, state, update, seek, auto, setAuto }: { config: Config; state: FrameState; update: (patch: Partial<Config>) => void; seek: (p: number) => void; auto: boolean; setAuto: (on: boolean) => void }) {
   const track = useRef<HTMLDivElement>(null);
-  const fn = easing[config.easing];
-  const toProgress = (s: SectionConfig, value: number) => (s.unit === "time" ? (state.duration ? invert(fn, clamp(value / state.duration)) : -1) : value);
+  const fn = withTail(easing[config.easing]);
+  const toProgress = (s: SectionConfig, value: number) => (s.unit === "time" ? (state.duration ? invertEasing(fn, clamp(value / state.duration)) : -1) : value);
   const fromProgress = (s: SectionConfig, p: number) => (s.unit === "time" ? Math.round(fn(clamp(p)) * state.duration * 10) / 10 : Math.round(clamp(p) * 100) / 100);
   const at = (event: { clientX: number }) => {
     const rect = track.current!.getBoundingClientRect();
