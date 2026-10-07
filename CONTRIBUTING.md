@@ -10,6 +10,7 @@ npm run lint
 npm test            # unit tests (Vitest)
 npm run test:e2e    # browser tests (Playwright) in Chrome, Firefox and WebKit
 npm run site:build  # docs site and demos → dist-site/
+npm run site:check  # check every internal link and #anchor in dist-site/
 ```
 
 The demos and the docs site import the library from `src/` directly. Browser

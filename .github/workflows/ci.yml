@@ -19,4 +19,6 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npm run site:build
+      - run: npm run site:check
       - run: npx playwright test --project=chrome

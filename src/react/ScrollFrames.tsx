@@ -10,7 +10,7 @@ import { useVideoProgressVariable } from "./hooks";
 import { BaseStyles } from "./styles";
 
 export interface ScrollFramesProps
-  extends Omit<EngineOptions, "video" | "frames" | "container" | "stage" | "warmup"> {
+  extends Omit<EngineOptions, "video" | "frames" | "container" | "stage" | "warmup" | "preview"> {
   urls: string | string[] | ((index: number) => string);
   count: number;
   fit?: "cover" | "contain";

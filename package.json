@@ -64,6 +64,7 @@
     "site:dev": "astro dev --root site",
     "site:build": "astro build --root site && npm run site:demos && pagefind --site dist-site",
     "site:demos": "node site/build-demos.mjs",
+    "site:check": "node site/check-links.mjs",
     "site:preview": "astro preview --root site"
   },
   "peerDependencies": {
