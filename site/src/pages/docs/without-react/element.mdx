@@ -1,0 +1,221 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: <vid-scroll>
+description: The full reference for the custom element, for pages without React.
+slug: without-react/element
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+<Callout kind="warning" title="Experimental">
+  The element is new in 0.3. Its attributes, events and styling hooks may still
+  change before 1.0.
+</Callout>
+
+`<vid-scroll>` runs the same engine as the React `ScrollVideo`: loading,
+re-encoding, caching and scrubbing all behave the same. This page lists
+everything it supports. To add it to a page, start with
+[Plain HTML](/docs/get-started/html/).
+
+## How it's built
+
+The element keeps its own parts (the pinned stage, the video and the loading
+overlay) inside a shadow root. Your content stays ordinary page content: the
+element shows its children over the video through a slot. So your CSS styles
+your content as usual, and frameworks that render the children keep full
+control of them.
+
+## Attributes
+
+<Table>
+  <thead>
+    <tr><th>Attribute</th><th>Values</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>src</code></td><td>URL</td><td>Video file. Without it the element does nothing; removing it stops the video.</td></tr>
+    <tr><td><code>length</code></td><td><code>"400vh"</code>, <code>"2000px"</code>, <code>"auto"</code></td><td>Scrolling that covers the whole video.</td></tr>
+    <tr><td><code>easing</code></td><td>preset name</td><td>Curve from scroll to video time, such as <code>inOutSine</code>.</td></tr>
+    <tr><td><code>fit</code></td><td><code>cover</code>, <code>contain</code></td><td>How the video fills the screen. Default <code>cover</code>.</td></tr>
+    <tr><td><code>poster</code></td><td>URL, or <code>none</code></td><td>Image while loading. Without it, the video's first frame is shown.</td></tr>
+    <tr><td><code>smooth-scroll</code></td><td>present, or <code>"false"</code></td><td>Eased mouse-wheel scrolling for the page.</td></tr>
+    <tr><td><code>optimize</code></td><td><code>"false"</code>, <code>"wait"</code></td><td>Turn off the in-browser re-encode, or keep the loader until it finishes.</td></tr>
+    <tr><td><code>full-preload</code></td><td><code>"false"</code></td><td>Stream the file directly instead of downloading it first.</td></tr>
+    <tr><td><code>fps</code></td><td>number</td><td>Frame rate for frame-based section ranges.</td></tr>
+    <tr><td><code>warmup</code></td><td><code>"false"</code>, or a number of steps</td><td>The pass over the timeline while loading.</td></tr>
+    <tr><td><code>loader</code></td><td><code>none</code></td><td>Hide the loading overlay and badge.</td></tr>
+    <tr><td><code>debug</code></td><td>present</td><td>Log engine internals to the console.</td></tr>
+  </tbody>
+</Table>
+
+Changing an attribute takes effect straight away, the same way a prop change
+does in React: `easing` applies immediately, a new `length` or `fps` rebuilds
+the scroll mapping, and a new `src` reloads the video.
+
+### Options that aren't attributes
+
+Callbacks and object options, such as `optimize` settings, go in the `options`
+property. They override the attributes:
+
+```js title="main.js"
+const video = document.querySelector("vid-scroll");
+
+video.options = {
+  optimize: { maxResolution: 1080 },
+  onLoad: ({ source }) => console.log("served as", source),
+};
+```
+
+Assign a new object to change them; changing a property of the current object
+has no effect.
+
+## Sections
+
+`<vid-scroll-section>` shows its content over part of the video. It takes the
+same ranges as the React `Section`:
+
+<Table>
+  <thead>
+    <tr><th>Attribute</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>start</code>, <code>end</code></td><td>Scroll progress, 0 to 1</td></tr>
+    <tr><td><code>from-time</code>, <code>to-time</code></td><td>Seconds of video</td></tr>
+    <tr><td><code>from-frame</code>, <code>to-frame</code></td><td>Frame numbers</td></tr>
+    <tr><td><code>id</code></td><td>Name used in events. Generated when missing.</td></tr>
+  </tbody>
+</Table>
+
+A section must be inside a `<vid-scroll>`, at any depth. While active it has a
+`data-active` attribute, and it always has a `--progress` variable from 0 to 1
+across its range. Range rules are explained on the [Section](/docs/react/section/#ranges)
+page; they're identical here.
+
+## From JavaScript
+
+<Example name="element-api" />
+
+<Table>
+  <thead>
+    <tr><th>Member</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>scrollToTime(seconds, options?)</code></td><td>Scrolls the page to that point in the video, smoothly by default.</td></tr>
+    <tr><td><code>scrollToProgress(p, options?)</code></td><td>Scrolls to a progress from 0 to 1.</td></tr>
+    <tr><td><code>api</code></td><td>The full controller, or <code>null</code> before the element has started. See <Link href="/docs/without-react/core/">vidscroll/core</Link>.</td></tr>
+    <tr><td><code>options</code></td><td>Object options and callbacks, above.</td></tr>
+  </tbody>
+</Table>
+
+The element starts as soon as it's connected to the page with a `src`. Scripts
+that run before the element is defined should wait for it, as the example does
+with `customElements.whenDefined("vid-scroll")`.
+
+## Events
+
+All events bubble, so you can listen on the element or any ancestor.
+
+<Table>
+  <thead>
+    <tr><th>Event</th><th>Fired on</th><th><code>detail</code></th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>vidscroll-load</code></td><td>element</td><td><code>{"{ source, probe }"}</code>: how the video was served</td></tr>
+    <tr><td><code>vidscroll-ready</code></td><td>element</td><td>The current state. Fires again if the scroll mapping is rebuilt.</td></tr>
+    <tr><td><code>vidscroll-loader</code></td><td>element</td><td>The loading state, or <code>null</code> when loading is done</td></tr>
+    <tr><td><code>vidscroll-error</code></td><td>element</td><td>The <code>Error</code></td></tr>
+    <tr><td><code>vidscroll-enter</code></td><td>section</td><td><code>{"{ id }"}</code></td></tr>
+    <tr><td><code>vidscroll-exit</code></td><td>section</td><td><code>{"{ id }"}</code></td></tr>
+  </tbody>
+</Table>
+
+For per-frame updates, use `video.api.on("update", fn)` rather than an event.
+
+## Styling
+
+Your content is styled with ordinary CSS. The element's own parts are styled
+through these hooks:
+
+<Table>
+  <thead>
+    <tr><th>Hook</th><th>What it targets</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>vid-scroll::part(stage)</code></td><td>The pinned, screen-sized stage (black background by default)</td></tr>
+    <tr><td><code>vid-scroll::part(video)</code></td><td>The video</td></tr>
+    <tr><td><code>vid-scroll::part(overlay)</code></td><td>The layer holding your content</td></tr>
+    <tr><td><code>vid-scroll::part(loader)</code></td><td>The loading overlay and the corner badge</td></tr>
+    <tr><td><code>vid-scroll[data-phase]</code></td><td>While loading: <code>download</code>, <code>optimize</code>, <code>preparing</code> or <code>error</code></td></tr>
+    <tr><td><code>vid-scroll[data-background]</code></td><td>While the corner badge shows during a re-encode</td></tr>
+    <tr><td><code>--loader-progress</code></td><td>Loading progress from 0 to 1, on the element</td></tr>
+    <tr><td><code>--video-progress</code></td><td>Scroll progress through the whole video, on the element</td></tr>
+  </tbody>
+</Table>
+
+```css title="styles.css"
+vid-scroll::part(stage) {
+  background: #111;
+}
+
+vid-scroll[data-background]::part(loader) {
+  display: none;
+}
+```
+
+### A custom loader
+
+A child with `slot="loader"` replaces the built-in loader while the video
+can't be scrolled yet. It's hidden during the corner-badge phase, and errors
+always show the built-in message. Use `--loader-progress` to show progress:
+
+```html title="index.html"
+<vid-scroll src="/videos/hero.mp4" length="400vh">
+  <div slot="loader" class="my-loader">
+    <div class="my-loader__bar"></div>
+  </div>
+</vid-scroll>
+
+<style>
+  .my-loader__bar {
+    width: calc(var(--loader-progress, 0) * 100%);
+    height: 2px;
+    background: white;
+  }
+</style>
+```
+
+## In a page
+
+- The element is a block: its height is `length` plus one screen, set when it
+  starts. Set `length` explicitly when content follows it.
+- A parent with `overflow: hidden`, `auto` or `scroll` stops the video from
+  pinning. Use `overflow: clip` instead.
+- Removing the element from the page stops it; adding it back starts it again.
+
+## TypeScript
+
+Importing `vidscroll/element` registers the element types, so
+`document.querySelector("vid-scroll")` is typed as `VidScrollElement`. Event
+`detail` types are exported as `VidScrollEventMap`:
+
+```ts title="main.ts"
+import "vidscroll/element";
+import type { VidScrollEventMap } from "vidscroll/element";
+
+const video = document.querySelector("vid-scroll")!;
+
+video.addEventListener("vidscroll-loader", (event) => {
+  const { detail } = event as VidScrollEventMap["vidscroll-loader"];
+  console.log(detail?.phase);
+});
+```
+
+## Related
+
+- [Plain HTML](/docs/get-started/html/): adding the element to a page.
+- [vidscroll/core](/docs/without-react/core/): the controller behind it.

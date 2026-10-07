@@ -1,0 +1,162 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: vidscroll/core
+description: The controller behind the React component and the element, for full control from JavaScript.
+slug: without-react/core
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+import Steps from "../../../components/Steps.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+<Callout kind="warning" title="Experimental">
+  `vidscroll/core` is new in 0.3. Its API may still change before 1.0.
+</Callout>
+
+`createScrollVideo` is the controller that `ScrollVideo` and `<vid-scroll>`
+are built on. Use it when you want to write the markup yourself, wire vidscroll
+into a framework's own lifecycle, or build your own loader UI. For most pages
+without React, [the element](/docs/without-react/element/) is simpler.
+
+## Set it up
+
+<Steps>
+
+1. **Install vidscroll.** The core entry doesn't include React.
+
+   <PackageTabs pkg="vidscroll" />
+
+2. **Write the markup.** A container with a stage inside. The stage is the
+   part that stays pinned; an overlay inside it holds content over the video.
+
+   ```html title="index.html"
+   <div id="hero" data-vidscroll>
+     <div data-vidscroll-stage>
+       <div data-vidscroll-overlay>
+         <h2 class="title">Open water</h2>
+       </div>
+     </div>
+   </div>
+   ```
+
+3. **Create the controller.**
+
+   ```js title="main.js"
+   import { createScrollVideo } from "vidscroll/core";
+
+   const hero = document.getElementById("hero");
+   const video = createScrollVideo(
+     { container: hero, stage: hero.querySelector("[data-vidscroll-stage]") },
+     { src: "/videos/hero.mp4", length: "400vh", easing: "inOutSine" }
+   );
+   ```
+
+</Steps>
+
+The controller adds the video element to the stage, sets the container's
+height, and starts loading. The `data-vidscroll` attributes connect your markup
+to vidscroll's default styles, which are added to the page's `<head>` once.
+
+## Options
+
+The second argument takes the same options as the `ScrollVideo` props: `src`,
+`length`, `easing`, `fit`, `poster`, `optimize`, `smoothScroll`,
+`fullPreload`, `fps`, `smoothingTauMs`, `warmup`, `debug`, `onLoad` and
+`onError`. They're explained on the [ScrollVideo](/docs/react/scroll-video/#props)
+page.
+
+To change them later:
+
+```js title="main.js"
+video.update({ easing: "outCubic" });
+
+video.setOptions({ src: "/videos/other.mp4", length: "300vh" });
+```
+
+`update` changes only the options you pass; `setOptions` replaces all of them,
+so anything you leave out goes back to its default. Changes apply the same way
+as prop changes in React.
+
+## Controller
+
+<Table>
+  <thead>
+    <tr><th>Method</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>on(event, fn)</code>, <code>off(event, fn)</code></td><td>Listen to events (below). Listeners stay attached for the controller's whole life.</td></tr>
+    <tr><td><code>getState()</code></td><td>Progress, time, frame, duration and active sections.</td></tr>
+    <tr><td><code>isReady()</code></td><td>Whether the video is loaded and following the scroll.</td></tr>
+    <tr><td><code>getLoader()</code></td><td>The current loading state, or <code>null</code>.</td></tr>
+    <tr><td><code>scrollToTime(seconds, options?)</code></td><td>Scrolls the page to that point in the video, smoothly by default.</td></tr>
+    <tr><td><code>scrollToProgress(p, options?)</code></td><td>Scrolls to a progress from 0 to 1.</td></tr>
+    <tr><td><code>addSection(range)</code>, <code>removeSection(id)</code></td><td>Track a range of the video, such as <code>{"{ id: \"intro\", fromTime: 0, toTime: 4 }"}</code>. Ids must be unique.</td></tr>
+    <tr><td><code>getSectionProgress(id)</code></td><td>That section's progress, 0 to 1.</td></tr>
+    <tr><td><code>update(options)</code>, <code>setOptions(options)</code></td><td>Change options, above.</td></tr>
+    <tr><td><code>destroy()</code></td><td>Stop everything and remove the video. Call it when the content goes away.</td></tr>
+  </tbody>
+</Table>
+
+## Events
+
+<Table>
+  <thead>
+    <tr><th>Event</th><th>Payload</th><th>When</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>update</code></td><td>state</td><td>Every frame while the video moves</td></tr>
+    <tr><td><code>ready</code></td><td>state</td><td>The video is loaded and following the scroll</td></tr>
+    <tr><td><code>loader</code></td><td>loading state or <code>null</code></td><td>The loading state changes</td></tr>
+    <tr><td><code>sectionEnter</code>, <code>sectionExit</code></td><td><code>{"{ id, state }"}</code></td><td>A section becomes active or inactive</td></tr>
+    <tr><td><code>warmup</code></td><td><code>{"{ value }"}</code></td><td>Progress of the pass over the timeline while loading</td></tr>
+    <tr><td><code>resize</code></td><td>state</td><td>The window is resized</td></tr>
+  </tbody>
+</Table>
+
+Sections work like this:
+
+```js title="main.js"
+const title = document.querySelector(".title");
+
+video.addSection({ id: "title", fromTime: 0, toTime: 4 });
+video.on("sectionEnter", ({ id }) => id === "title" && title.classList.add("visible"));
+video.on("sectionExit", ({ id }) => id === "title" && title.classList.remove("visible"));
+```
+
+## Your own loader
+
+The core has no loading UI. The `loader` event gives you the same state the
+React loader receives, with `phase` (`download`, `optimize`, `preparing` or
+`error`), `progress` from 0 to 1, and `background`, which is true while the
+original video is already scrollable during a re-encode:
+
+```js title="main.js"
+const bar = document.querySelector(".loading-bar");
+
+video.on("loader", (state) => {
+  bar.hidden = !state || state.background;
+  if (state) bar.style.width = `${Math.round(state.progress * 100)}%`;
+});
+```
+
+## In a framework
+
+Create the controller when the markup is on the page, pass changes to `update`
+or `setOptions`, and call `destroy` when the component goes away. That's all
+`ScrollVideo` itself does in React.
+
+## Styles
+
+`createScrollVideo` adds vidscroll's default styles to the page's `<head>` once.
+They're also exported as a string, `styles`, if you want to read or copy them.
+Every rule has zero specificity, so your own CSS always wins.
+
+## Related
+
+- [`<vid-scroll>`](/docs/without-react/element/): the element built on this.
+- [How it works](/docs/start/how-it-works/): what the controller does on each frame.

@@ -38,8 +38,8 @@ export const NAV: NavGroup[] = [
   {
     title: "Without React",
     items: [
-      { title: "<vid-scroll>", experimental: true },
-      { title: "vidscroll/core", experimental: true },
+      { title: "<vid-scroll>", slug: "without-react/element", experimental: true },
+      { title: "vidscroll/core", slug: "without-react/core", experimental: true },
     ],
   },
   {

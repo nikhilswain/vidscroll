@@ -1,0 +1,45 @@
+<script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll@0.3/dist/cdn/vidscroll-element.js"></script>
+
+<vid-scroll id="film" src="/train.mp4" length="400vh" easing="inOutSine">
+  <nav class="chapters">
+    <button data-time="1">Doors</button>
+    <button data-time="13">Open water</button>
+    <button data-time="25">Away</button>
+  </nav>
+  <p class="timecode">0.0 s</p>
+</vid-scroll>
+
+<script type="module">
+  const film = document.getElementById("film");
+  const timecode = film.querySelector(".timecode");
+
+  film.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => film.scrollToTime(Number(button.dataset.time)));
+  });
+
+  customElements.whenDefined("vid-scroll").then(() => {
+    film.api.on("update", ({ time }) => {
+      timecode.textContent = `${time.toFixed(1)} s`;
+    });
+  });
+</script>
+
+<style>
+  .chapters {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .timecode {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    margin: 0;
+    color: #fff;
+    font: 500 28px monospace;
+  }
+</style>

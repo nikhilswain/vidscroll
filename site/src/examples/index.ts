@@ -3,6 +3,7 @@ import basic from "./basic";
 import basicSource from "./basic.tsx?raw";
 import options from "./options";
 import elementSource from "./element.html?raw";
+import elementApiSource from "./element-api.html?raw";
 import progress from "./progress";
 import progressSource from "./progress.tsx?raw";
 import hooks from "./hooks";
@@ -66,6 +67,12 @@ export const EXAMPLES: Record<string, ExampleEntry> = {
       { id: "doors", label: "Doors close", start: 0, end: 0.3 },
       { id: "water", label: "Open water", start: 0.55, end: 0.9 },
     ],
+  },
+  "element-api": {
+    title: "The <vid-scroll> element from JavaScript",
+    source: elementApiSource,
+    lang: "html",
+    timeline: [],
   },
   options: {
     title: "ScrollVideo options",
