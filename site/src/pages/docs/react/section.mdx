@@ -1,0 +1,155 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Section
+description: Show content over part of the video, by scroll position, time or frame.
+slug: react/section
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+import PropsTable from "../../../components/PropsTable.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+A `Section` goes inside a `ScrollVideo`. It's **active** while the scroll is
+inside its range: by default it fades in, sits over the video, and fades out
+again when you leave the range. Everything you put inside it is ordinary
+React content.
+
+```tsx title="Hero.tsx"
+import { ScrollVideo, Section } from "vidscroll";
+
+export function Hero() {
+  return (
+    <ScrollVideo src="/videos/hero.mp4" length="400vh">
+      <Section start={0} end={0.3}>
+        <h2>Doors close</h2>
+      </Section>
+      <Section fromTime={12} toTime={18}>
+        <h2>Open water</h2>
+      </Section>
+    </ScrollVideo>
+  );
+}
+```
+
+## Ranges
+
+A range has a start and an end, and each can be given in one of three units:
+
+<Table>
+  <thead>
+    <tr><th>Props</th><th>Unit</th><th>Use it when</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>start</code>, <code>end</code></td><td>Scroll progress, 0 to 1</td><td>The text belongs to a stretch of scrolling, like the first third of the block.</td></tr>
+    <tr><td><code>fromTime</code>, <code>toTime</code></td><td>Seconds of video</td><td>The text belongs to a scene, like a caption for 12 s to 18 s.</td></tr>
+    <tr><td><code>fromFrame</code>, <code>toFrame</code></td><td>Frame numbers</td><td>You're matching exact frames from an editing tool.</td></tr>
+  </tbody>
+</Table>
+
+The difference matters when you use `easing`. Progress ranges are positions
+in the scroll, so easing doesn't move them. Time and frame ranges are tied to
+the video, so they stay on their scenes whatever the easing curve does to the
+scroll.
+
+Some details:
+
+- A missing start means the beginning, a missing end means the end. A section
+  with no range at all is active the whole time.
+- The start and end are resolved separately, so you can mix them, for example
+  `start={0.2}` with `toTime={18}`. If both kinds are given for one end,
+  progress wins over time, and time over frames.
+- A section is active from its start up to, but not including, its end. A
+  section that ends at the very end of the video stays active there.
+- Time and frame ranges only become active once the video's duration is
+  known, so they never flash on while it loads.
+- Frame numbers use the `fps` prop (30 by default) unless the browser measures
+  the video's real frame rate.
+
+## Following the progress with CSS
+
+Every section sets a `--progress` CSS variable on itself: `0` before its range,
+rising to `1` across it, and `1` after it. Children can use it for any effect,
+with no JavaScript and no re-renders:
+
+<Example name="progress" />
+
+The bar fills with `width: calc(var(--progress) * 100%)` and the heading rises
+into place as `--progress` goes from 0 to 1.
+In your own CSS, the heading part looks like this:
+
+```css title="styles.css"
+.caption h2 {
+  transform: translateY(calc((1 - var(--progress)) * 80px));
+}
+```
+
+## Styling active sections
+
+By default a section covers the video, centres its content, and fades over
+0.4 s. While active it has a `data-active` attribute, so you can restyle it with
+CSS:
+
+```css title="styles.css"
+.caption {
+  align-items: flex-end;
+  padding-bottom: 12vh;
+}
+
+.caption[data-active] h2 {
+  letter-spacing: 0.02em;
+}
+```
+
+```tsx title="Hero.tsx"
+<Section className="caption" fromTime={12} toTime={18}>
+  <h2>Open water</h2>
+</Section>
+```
+
+`activeClassName` and `inactiveClassName` add a class in either state instead,
+which helps with utility CSS such as Tailwind. All the default styles have zero
+specificity, so any rule you write wins.
+
+<Callout title="Clicks">
+  While a section is active, its content takes clicks; its empty area lets them
+  through to whatever is underneath. Content outside any section ignores clicks
+  by default: give buttons there `pointer-events: auto`.
+</Callout>
+
+## Section ids
+
+Each section gets an id, used as its `data-vidscroll-section` attribute and in
+events. An automatic one is generated, so you only need `id` when you want to
+refer to the section from code, for example with `api.getSectionProgress("intro")`
+or to tell sections apart in `sectionEnter` events. Ids must be unique within
+one `ScrollVideo`.
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "start", type: "number", default: "0", description: "Start of the range in scroll progress, 0 to 1.", href: "#ranges" },
+    { name: "end", type: "number", default: "1", description: "End of the range in scroll progress, 0 to 1.", href: "#ranges" },
+    { name: "fromTime", type: "number", description: "Start of the range in seconds.", href: "#ranges" },
+    { name: "toTime", type: "number", description: "End of the range in seconds.", href: "#ranges" },
+    { name: "fromFrame", type: "number", description: "Start of the range as a frame number.", href: "#ranges" },
+    { name: "toFrame", type: "number", description: "End of the range as a frame number.", href: "#ranges" },
+    { name: "id", type: "string", default: "automatic", description: "Name for events and <code>getSectionProgress</code>. Unique within the ScrollVideo.", href: "#section-ids" },
+    { name: "as", type: "ElementType", default: '"div"', description: "Element or component to render, such as <code>\"section\"</code>." },
+    { name: "className", type: "string", description: "Class on the section element." },
+    { name: "activeClassName", type: "string", description: "Extra class while active.", href: "#styling-active-sections" },
+    { name: "inactiveClassName", type: "string", description: "Extra class while inactive.", href: "#styling-active-sections" },
+    { name: "style", type: "CSSProperties", description: "Inline styles on the section element." },
+    { name: "data", type: "unknown", description: "Stored with the section. Not passed to events or hooks yet, so it has no visible effect today." },
+  ]}
+/>
+
+## Related
+
+- [ScrollVideo](/docs/react/scroll-video/): `length`, `easing` and loading.
+- [Hooks](/docs/react/hooks/): react to active sections from your own components.

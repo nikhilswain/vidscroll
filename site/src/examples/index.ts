@@ -3,6 +3,10 @@ import basic from "./basic";
 import basicSource from "./basic.tsx?raw";
 import options from "./options";
 import elementSource from "./element.html?raw";
+import progress from "./progress";
+import progressSource from "./progress.tsx?raw";
+import hooks from "./hooks";
+import hooksSource from "./hooks.tsx?raw";
 
 export interface TimelineRange {
   id: string;
@@ -28,6 +32,18 @@ export const EXAMPLES: Record<string, ExampleEntry> = {
       { id: "doors", label: "Doors close", start: 0, end: 0.3 },
       { id: "water", label: "Open water", start: 0.55, end: 0.9 },
     ],
+  },
+  progress: {
+    title: "A section driven by --progress",
+    component: progress,
+    source: progressSource,
+    timeline: [{ id: "caption", label: "caption (start 0.1, end 0.9)", start: 0.1, end: 0.9 }],
+  },
+  hooks: {
+    title: "Hooks: timecode, progress bar and chapters",
+    component: hooks,
+    source: hooksSource,
+    timeline: [],
   },
   element: {
     title: "The <vid-scroll> element",

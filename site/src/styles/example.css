@@ -10,3 +10,13 @@ body {
   text-align: center;
   text-shadow: 0 2px 16px rgb(0 0 0 / 0.6);
 }
+
+button {
+  padding: 6px 12px;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.45);
+  color: #fff;
+  font: 500 14px/1 var(--sans);
+  cursor: pointer;
+}

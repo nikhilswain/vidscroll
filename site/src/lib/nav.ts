@@ -30,8 +30,8 @@ export const NAV: NavGroup[] = [
     title: "React API",
     items: [
       { title: "ScrollVideo", slug: "react/scroll-video" },
-      { title: "Section" },
-      { title: "Hooks" },
+      { title: "Section", slug: "react/section" },
+      { title: "Hooks", slug: "react/hooks" },
       { title: "ScrollFrames" },
     ],
   },

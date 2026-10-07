@@ -1,0 +1,144 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Hooks
+description: Read the video's progress, time and sections from your own components, or control the scroll.
+slug: react/hooks
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Three hooks connect your components to a scroll video. They work in any
+component rendered inside `ScrollVideo`, at any depth.
+
+<Table>
+  <thead>
+    <tr><th>Hook</th><th>Gives you</th><th>Re-renders</th><th>Use it for</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>useScrollVideoState()</code></td><td>Progress, time, frame, active sections</td><td>When they change</td><td>Small readouts: a timecode, an active chapter name</td></tr>
+    <tr><td><code>useScrollVideoUpdate(fn)</code></td><td>The same, every frame, in a callback</td><td>Never</td><td>Anything animated: write to a ref</td></tr>
+    <tr><td><code>useScrollVideo()</code></td><td>The <code>api</code> object</td><td>When the api becomes available</td><td>Actions: jump to a time, read a section's progress</td></tr>
+  </tbody>
+</Table>
+
+All three are used in this example: a timecode, a bar along the bottom, and
+buttons that jump to a moment.
+
+<Example name="hooks" />
+
+## `useScrollVideoState`
+
+Returns the current state and re-renders the component when it changes:
+
+```tsx title="Timecode.tsx"
+import { useScrollVideoState } from "vidscroll";
+
+export function Timecode() {
+  const { ready, time } = useScrollVideoState();
+  return <span>{ready ? time.toFixed(1) : "–"} s</span>;
+}
+```
+
+<Table>
+  <thead>
+    <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ready</code></td><td><code>boolean</code></td><td>The video is loaded and following the scroll</td></tr>
+    <tr><td><code>progress</code></td><td><code>number</code></td><td>Smoothed scroll progress through the block, 0 to 1</td></tr>
+    <tr><td><code>time</code></td><td><code>number</code></td><td>Video time in seconds</td></tr>
+    <tr><td><code>frame</code></td><td><code>number</code></td><td>Frame number</td></tr>
+    <tr><td><code>activeSections</code></td><td><code>string[]</code></td><td>Ids of the sections active right now</td></tr>
+  </tbody>
+</Table>
+
+While someone scrolls, these values change every frame, so the component
+re-renders every frame. That's fine for a few small components. For anything
+heavier, or anything you animate, use `useScrollVideoUpdate`.
+
+## `useScrollVideoUpdate`
+
+Calls your function on every frame with the latest state, without re-rendering.
+Write the result straight to the DOM through a ref:
+
+```tsx title="ProgressBar.tsx"
+import { useRef } from "react";
+import { useScrollVideoUpdate } from "vidscroll";
+
+export function ProgressBar() {
+  const bar = useRef<HTMLDivElement>(null);
+
+  useScrollVideoUpdate(({ linearProgress }) => {
+    if (bar.current) bar.current.style.transform = `scaleX(${linearProgress})`;
+  });
+
+  return <div ref={bar} className="progress-bar" />;
+}
+```
+
+The callback receives `linearProgress`, `time`, `frameIndex`, `totalFrames`,
+`duration` and `activeSections`. It's also called once right away with the
+current state. The latest version of your function is always used, so it can
+read props and state without being recreated.
+
+<Callout title="Often you don't need a hook at all">
+  For visual effects that follow the scroll, the `--video-progress` variable on
+  the `ScrollVideo` block and `--progress` on each section do the same job in
+  plain CSS, with no JavaScript.
+</Callout>
+
+## `useScrollVideo`
+
+Returns `{ api }`. The `api` is `null` until the video component has mounted,
+so check for it before using it:
+
+```tsx title="Chapters.tsx"
+import { useScrollVideo } from "vidscroll";
+
+export function Chapters() {
+  const { api } = useScrollVideo();
+  return (
+    <nav style={{ pointerEvents: "auto" }}>
+      <button onClick={() => api?.scrollToTime(1)}>Doors</button>
+      <button onClick={() => api?.scrollToTime(13)}>Open water</button>
+    </nav>
+  );
+}
+```
+
+<Table>
+  <thead>
+    <tr><th>Method</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>scrollToTime(seconds, options?)</code></td><td>Scrolls the page to the point where the video shows that time. Smooth by default; pass <code>{"{ behavior: \"instant\" }"}</code> to jump. Does nothing until the duration is known.</td></tr>
+    <tr><td><code>scrollToProgress(p, options?)</code></td><td>Scrolls to a progress between 0 and 1, the same way.</td></tr>
+    <tr><td><code>getSectionProgress(id)</code></td><td>The same 0 to 1 value as that section's <code>--progress</code>.</td></tr>
+    <tr><td><code>getState()</code></td><td>The current state, as passed to <code>useScrollVideoUpdate</code>.</td></tr>
+    <tr><td><code>isReady()</code></td><td>Whether the video is loaded and following the scroll.</td></tr>
+    <tr><td><code>on(event, fn)</code>, <code>off(event, fn)</code></td><td>Subscribe to events: <code>ready</code>, <code>update</code>, <code>sectionEnter</code>, <code>sectionExit</code> and more.</td></tr>
+  </tbody>
+</Table>
+
+Smooth scrolling to a time scrubs the video through everything on the way,
+which reads well for chapter navigation. Buttons placed over the video outside a
+`Section` need `pointer-events: auto`, because the overlay ignores clicks by
+default.
+
+## Outside a ScrollVideo
+
+Used outside a `ScrollVideo`, the hooks don't fail: `useScrollVideo` returns
+`{ api: null }`, `useScrollVideoState` returns an idle state with `ready: false`,
+and `useScrollVideoUpdate` never calls your function. They also work inside
+`ScrollFrames`.
+
+## Related
+
+- [Section](/docs/react/section/): ranges, `--progress` and active state.
+- [ScrollVideo](/docs/react/scroll-video/): the component these hooks read from.
