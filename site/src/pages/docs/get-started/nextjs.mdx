@@ -122,10 +122,13 @@ The server sends the markup for the block, the first frame (or your `poster`)
 and the loading bar. In the browser, React takes over and vidscroll starts
 downloading the video.
 
-<Callout title="The block grows once when it starts">
-  Until the JavaScript runs, the block is one screen tall. It grows to its
-  full scroll length as soon as the component starts, so content below it
-  moves down once at that point.
+With an explicit `length` such as `"400vh"`, the server already sends the
+block at its full height, so nothing on the page moves when the video starts.
+
+<Callout title="Set length when content follows the video">
+  With the default `length="auto"`, the height depends on the video's
+  duration, which is only known in the browser. The block starts one screen
+  tall and grows once the video loads, moving anything below it.
 </Callout>
 
 ## Next steps

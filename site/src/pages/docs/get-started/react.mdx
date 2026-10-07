@@ -87,9 +87,10 @@ it scrolls normally, and a page can hold several scroll videos.
   remove the overflow, or use `overflow: clip`, which doesn't break sticky.
 </Callout>
 
-Set `length` explicitly when content follows the video. With the default
-`"auto"`, the length comes from the video's duration, which is only known once
-it loads, so anything below moves down at that point.
+Set `length` explicitly when content follows the video. Then the block has its
+full height from the first render (on the server too), and nothing below it
+moves. With the default `"auto"`, the length comes from the video's duration,
+which is only known once it loads, so anything below moves down at that point.
 
 ## What visitors see while it loads
 
