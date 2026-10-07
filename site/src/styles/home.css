@@ -190,16 +190,11 @@
   line-height: 1.6;
 }
 
-.why .keyframes {
-  max-width: none;
-  margin: var(--space-5) 0;
-}
-
 .facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-6);
-  margin: var(--space-8) 0 var(--space-6);
+  gap: var(--space-7) var(--space-6);
+  margin: var(--space-7) 0;
 }
 
 .facts > div {
@@ -221,6 +216,7 @@
 .facts code {
   color: var(--text);
   font-size: 0.9em;
+  white-space: nowrap;
 }
 
 .home-link {

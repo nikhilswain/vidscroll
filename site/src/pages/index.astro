@@ -1,6 +1,5 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
-import KeyframeStrip from "../components/KeyframeStrip.astro";
 import { Hero } from "../components/home/Hero";
 import { CreditLine } from "../../../demo/src/CreditLine";
 import { SINTEL_CREDIT, SPRING_CREDIT, TRAIN_CREDIT } from "../../../demo/src/credits";
@@ -17,27 +16,36 @@ const docs = withBase("docs/start/introduction/");
 
     <section class="home-section why" aria-labelledby="why-heading">
       <div class="home-section__intro">
-        <h2 id="why-heading">Why scrubbing video usually stutters</h2>
+        <h2 id="why-heading">Why vidscroll</h2>
         <p>
-          A video stores a full picture only every few seconds. To show any other frame, the browser rebuilds it
-          from the last full picture, and scrolling asks for a new frame dozens of times a second. vidscroll fixes
-          the file, in the browser or ahead of time, so every frame is close at hand.
+          Scroll-driven video usually means choppy scrubbing, or exporting hundreds of images by hand. vidscroll plays
+          the video file you already have, smoothly, and keeps your content in step with it.
         </p>
       </div>
-      <KeyframeStrip label="A typical exported video" every={4} note="A full picture every few seconds: slow to jump around in." />
-      <KeyframeStrip label="The same video after vidscroll" every={0.33} note="A full picture every third of a second: any frame is quick to show." />
       <dl class="facts">
         <div>
-          <dt>Any MP4 or WebM</dt>
-          <dd>Files that are slow to scrub are re-encoded in the visitor's browser and cached for the next visit.</dd>
+          <dt>Smooth with any video</dt>
+          <dd>Most exported videos are slow to scrub. vidscroll re-encodes them in the visitor's browser once and caches the result, or you prepare them ahead of time with <code>npx vidscroll encode</code>.</dd>
         </div>
         <div>
-          <dt>Or prepare it once</dt>
-          <dd><code>npx vidscroll encode hero.mp4</code> before you deploy, and every visitor scrubs smoothly from the start.</dd>
+          <dt>No image sequences</dt>
+          <dd>Use the MP4 or WebM you already have instead of exporting and loading a folder of frames. Image sequences still work when you need them.</dd>
         </div>
         <div>
-          <dt>React or plain HTML</dt>
-          <dd>Components and hooks for React and Next.js, and a <code>&lt;vid-scroll&gt;</code> element for everything else.</dd>
+          <dt>Content in sync</dt>
+          <dd>Show text between two points, time captions to the footage, or drive any CSS from the scroll position, without writing scroll code.</dd>
+        </div>
+        <div>
+          <dt>Loading handled</dt>
+          <dd>A built-in loading screen with progress, a poster while the video loads, and clear console messages when a file is the problem.</dd>
+        </div>
+        <div>
+          <dt>React and Next.js</dt>
+          <dd>Components and hooks that work with server rendering. Give the video a <code>length</code> and it has its final height from the start, so nothing below it jumps.</dd>
+        </div>
+        <div>
+          <dt>Or plain HTML</dt>
+          <dd>A <code>&lt;vid-scroll&gt;</code> element for any other page, installed from npm or loaded with one script tag.</dd>
         </div>
       </dl>
       <a class="home-link" href={withBase("docs/start/how-it-works/")}>How it works</a>
