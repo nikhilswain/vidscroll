@@ -7,10 +7,12 @@ slug: get-started/astro
 
 import Pre from "../../../components/Pre.astro";
 import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
 import PackageTabs from "../../../components/PackageTabs.astro";
 import Callout from "../../../components/Callout.astro";
+import Steps from "../../../components/Steps.astro";
 
-export const components = { pre: Pre, a: Link };
+export const components = { pre: Pre, a: Link, table: Table };
 
 There are two ways to use vidscroll in Astro. Use the React components if your
 site already uses React or you want sections, hooks and callbacks. Use the
@@ -18,38 +20,44 @@ site already uses React or you want sections, hooks and callbacks. Use the
 
 ## With the React integration
 
-Add React to your project if it isn't there yet, then install vidscroll:
+<Steps>
 
-```bash
-npx astro add react
-```
+1. **Add React to your project.** Skip this if it already uses React.
 
-<PackageTabs pkg="vidscroll" />
+   ```bash
+   npx astro add react
+   ```
 
-Write the scroll video, with its sections, in one React component:
+2. **Install vidscroll.**
 
-```tsx title="src/components/Hero.tsx"
-import { ScrollVideo, Section } from "vidscroll";
+   <PackageTabs pkg="vidscroll" />
 
-export function Hero({ src }: { src: string }) {
-  return (
-    <ScrollVideo src={src} length="400vh">
-      <Section start={0} end={0.3}>
-        <h2>Doors close</h2>
-      </Section>
-    </ScrollVideo>
-  );
-}
-```
+3. **Write the scroll video, with its sections, in one React component.**
 
-Then use that component as an island in your page:
+   ```tsx title="src/components/Hero.tsx"
+   import { ScrollVideo, Section } from "vidscroll";
 
-```astro title="src/pages/index.astro"
----
-import { Hero } from "../components/Hero";
----
-<Hero client:load src="/videos/hero.mp4" />
-```
+   export function Hero({ src }: { src: string }) {
+     return (
+       <ScrollVideo src={src} length="400vh">
+         <Section start={0} end={0.3}>
+           <h2>Doors close</h2>
+         </Section>
+       </ScrollVideo>
+     );
+   }
+   ```
+
+4. **Use that component as an island in your page.**
+
+   ```astro title="src/pages/index.astro"
+   ---
+   import { Hero } from "../components/Hero";
+   ---
+   <Hero client:load src="/videos/hero.mp4" />
+   ```
+
+</Steps>
 
 `client:load` renders the markup at build time and starts the video when the
 page loads. `client:only="react"` works too, if you'd rather skip the build-time
@@ -64,22 +72,29 @@ markup.
 
 ## With the custom element
 
-The element needs no integration. Install vidscroll and import the element in
-a script on the page:
+The element needs no integration and ships no React.
 
-<PackageTabs pkg="vidscroll" />
+<Steps>
 
-```astro title="src/pages/index.astro"
-<vid-scroll src="/videos/hero.mp4" length="400vh">
-  <vid-scroll-section start="0" end="0.3">
-    <h2>Doors close</h2>
-  </vid-scroll-section>
-</vid-scroll>
+1. **Install vidscroll.**
 
-<script>
-  import "vidscroll/element";
-</script>
-```
+   <PackageTabs pkg="vidscroll" />
+
+2. **Add the element and import it in a script on the page.**
+
+   ```astro title="src/pages/index.astro"
+   <vid-scroll src="/videos/hero.mp4" length="400vh">
+     <vid-scroll-section start="0" end="0.3">
+       <h2>Doors close</h2>
+     </vid-scroll-section>
+   </vid-scroll>
+
+   <script>
+     import "vidscroll/element";
+   </script>
+   ```
+
+</Steps>
 
 Astro bundles the script and the element upgrades itself in the page. The
 element is experimental: see

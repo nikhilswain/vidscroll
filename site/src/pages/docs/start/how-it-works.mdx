@@ -7,11 +7,12 @@ slug: start/how-it-works
 
 import Pre from "../../../components/Pre.astro";
 import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
 import Flow from "../../../components/Flow.astro";
 import KeyframeStrip from "../../../components/KeyframeStrip.astro";
 import Callout from "../../../components/Callout.astro";
 
-export const components = { pre: Pre, a: Link };
+export const components = { pre: Pre, a: Link, table: Table };
 
 A scroll video is a tall block on the page with a screen-sized stage inside it.
 The stage is pinned with CSS (`position: sticky`) while the block scrolls past,

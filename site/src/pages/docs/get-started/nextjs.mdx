@@ -1,55 +1,82 @@
 ---
 layout: ../../../layouts/DocsLayout.astro
 title: Next.js
-description: Use vidscroll in the App Router, including from server components.
+description: Use vidscroll in the App Router, from server components or client components.
 slug: get-started/nextjs
 ---
 
 import Pre from "../../../components/Pre.astro";
 import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
 import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+import Steps from "../../../components/Steps.astro";
 
-export const components = { pre: Pre, a: Link };
+export const components = { pre: Pre, a: Link, table: Table };
 
-## Install
+## Set it up
 
-<PackageTabs pkg="vidscroll" />
+<Steps>
 
-## Use it in a server component
+1. **Install vidscroll.**
 
-The package is marked `"use client"`, so you can import `ScrollVideo` and
-`Section` straight into a server component, such as a page in the App Router.
-Next.js renders the markup on the server and the video starts in the browser.
+   <PackageTabs pkg="vidscroll" />
 
-```tsx title="app/page.tsx"
-import { ScrollVideo, Section } from "vidscroll";
+2. **Put the video in `public/`.** A file at `public/videos/hero.mp4` is served
+   at `/videos/hero.mp4`.
 
-export default function Page() {
-  return (
-    <main>
-      <ScrollVideo src="/videos/hero.mp4" length="400vh" easing="inOutSine">
-        <Section start={0} end={0.3}>
-          <h2>Doors close</h2>
-        </Section>
-      </ScrollVideo>
-    </main>
-  );
-}
-```
+3. **Use `ScrollVideo` in a page.** No `"use client"` needed:
 
-Put the video in `public/videos/` so it's served from `/videos/hero.mp4`.
+   ```tsx title="app/page.tsx"
+   import { ScrollVideo, Section } from "vidscroll";
 
-## Functions and hooks need a client component
+   export default function Page() {
+     return (
+       <main>
+         <ScrollVideo src="/videos/hero.mp4" length="400vh" easing="inOutSine">
+           <Section start={0} end={0.3}>
+             <h2>Doors close</h2>
+           </Section>
+         </ScrollVideo>
+       </main>
+     );
+   }
+   ```
 
-Server components can only pass plain data to client components. That covers
-most props, but not these:
+</Steps>
 
-- a custom `easing` function (use a preset name such as `"inOutSine"` instead)
-- `onLoad`, `onError` and a `loader` function
-- the hooks `useScrollVideo`, `useScrollVideoState` and `useScrollVideoUpdate`
+## Server component or client component?
 
-For those, put the video in your own component that starts with
-`"use client"`:
+Both work, and the video behaves exactly the same either way. vidscroll's
+components are marked `"use client"` inside the package, so when you use them
+from a server component, Next.js treats them as client components
+automatically. What changes is only what you can pass to them.
+
+<Table>
+  <thead>
+    <tr><th></th><th>From a server component</th><th>From your own client component</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Rendered on the server</td><td>Yes</td><td>Yes, Next.js renders client components on the server too</td></tr>
+    <tr><td>Where the video runs</td><td>In the browser, after the page loads</td><td>The same</td></tr>
+    <tr><td>Props you can pass</td><td>Plain data: strings, numbers, booleans, objects</td><td>Anything, including functions</td></tr>
+    <tr><td>Hooks</td><td>Not available</td><td>Available inside <code>ScrollVideo</code></td></tr>
+    <tr><td>Scrolling and loading</td><td>Identical</td><td>Identical</td></tr>
+  </tbody>
+</Table>
+
+So start in a server component, and move to a client component only when you
+need one of these:
+
+- a custom `easing` function (a preset name such as `"inOutSine"` works
+  anywhere)
+- `onLoad`, `onError` or a `loader` function
+- the hooks `useScrollVideo`, `useScrollVideoState` or `useScrollVideoUpdate`
+
+## Using functions and hooks
+
+Put the scroll video in your own component that starts with `"use client"`,
+then use that component from any page:
 
 ```tsx title="app/hero.tsx"
 "use client";
@@ -77,8 +104,29 @@ export function Hero() {
 }
 ```
 
-Then use `<Hero />` from any page. Hooks work in any component rendered inside
-`ScrollVideo`.
+```tsx title="app/page.tsx"
+import { Hero } from "./hero";
+
+export default function Page() {
+  return <Hero />;
+}
+```
+
+Hooks work in any component rendered inside `ScrollVideo`, like `Timecode`
+above.
+
+## What the server sends
+
+Nothing video-related happens on the server: the file is never fetched there.
+The server sends the markup for the block, the first frame (or your `poster`)
+and the loading bar. In the browser, React takes over and vidscroll starts
+downloading the video.
+
+<Callout title="The block grows once when it starts">
+  Until the JavaScript runs, the block is one screen tall. It grows to its
+  full scroll length as soon as the component starts, so content below it
+  moves down once at that point.
+</Callout>
 
 ## Next steps
 

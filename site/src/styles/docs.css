@@ -1288,3 +1288,106 @@ a.pager__item--next:hover .pager__arrow {
 .prose .flow {
   padding: 0;
 }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table thead th {
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.data-table td {
+  color: var(--text-muted);
+}
+
+.data-table td:first-child {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.prose .data-table code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+}
+
+.steps {
+  max-width: var(--prose-w);
+}
+
+.prose .steps > ol {
+  margin: var(--space-5) 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.prose .steps > ol > li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 var(--space-6) var(--space-7);
+  counter-increment: step;
+}
+
+.prose .steps > ol > li::before {
+  content: counter(step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--accent);
+  font: 500 13px/1 var(--mono);
+}
+
+.prose .steps > ol > li::after {
+  content: "";
+  position: absolute;
+  top: 36px;
+  bottom: 8px;
+  left: 14px;
+  width: 1px;
+  background: var(--border);
+}
+
+.prose .steps > ol > li:last-child {
+  padding-bottom: 0;
+}
+
+.prose .steps > ol > li:last-child::after {
+  display: none;
+}
+
+.prose .steps > ol > li > p:first-child {
+  min-height: 28px;
+  padding-top: 2px;
+}
+
+.prose .steps .code {
+  margin: var(--space-3) 0 0;
+}

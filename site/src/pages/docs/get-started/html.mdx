@@ -7,11 +7,13 @@ slug: get-started/html
 
 import Pre from "../../../components/Pre.astro";
 import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
 import Example from "../../../components/Example.astro";
 import PackageTabs from "../../../components/PackageTabs.astro";
 import Callout from "../../../components/Callout.astro";
+import Steps from "../../../components/Steps.astro";
 
-export const components = { pre: Pre, a: Link };
+export const components = { pre: Pre, a: Link, table: Table };
 
 <Callout kind="warning" title="Experimental">
   The element is new in 0.3. Its attributes and events may still change
@@ -22,37 +24,44 @@ export const components = { pre: Pre, a: Link };
 a script tag: plain pages, site builders and template engines. It runs the
 same loading, re-encoding and scrubbing as the React component.
 
-## Add the script
+## Set it up
 
-From a CDN, with no build step:
+<Steps>
 
-```html title="index.html"
-<script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll@0.3/dist/cdn/vidscroll-element.js"></script>
-```
+1. **Load the element.** From a CDN, with no build step, add this to your
+   page's `<head>`:
 
-Or from npm, if your site has a bundler:
+   ```html title="index.html"
+   <script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll@0.3/dist/cdn/vidscroll-element.js"></script>
+   ```
 
-<PackageTabs pkg="vidscroll" />
+   Or, if your site has a bundler, install it and import it once:
 
-```js title="main.js"
-import "vidscroll/element";
-```
+   <PackageTabs pkg="vidscroll" />
 
-The CDN version is pinned to `0.3` so a future release can't change your page
-unexpectedly.
+   ```js title="main.js"
+   import "vidscroll/element";
+   ```
 
-## Add the element
+2. **Add the element where the video should appear.**
 
-```html title="index.html"
-<vid-scroll src="/videos/hero.mp4" length="400vh">
-  <vid-scroll-section start="0" end="0.3">
-    <h2>Doors close</h2>
-  </vid-scroll-section>
-  <vid-scroll-section start="0.55" end="0.9">
-    <h2>Open water</h2>
-  </vid-scroll-section>
-</vid-scroll>
-```
+   ```html title="index.html"
+   <vid-scroll src="/videos/hero.mp4" length="400vh">
+     <vid-scroll-section start="0" end="0.3">
+       <h2>Doors close</h2>
+     </vid-scroll-section>
+     <vid-scroll-section start="0.55" end="0.9">
+       <h2>Open water</h2>
+     </vid-scroll-section>
+   </vid-scroll>
+   ```
+
+</Steps>
+
+The CDN version is pinned to `0.3`, so a future release can't change your page
+unexpectedly. The pinning caveat from the [React page](/docs/get-started/react/#how-it-sits-in-your-page)
+applies here too: a parent with `overflow: hidden` stops the video from
+pinning.
 
 <Example name="element" />
 

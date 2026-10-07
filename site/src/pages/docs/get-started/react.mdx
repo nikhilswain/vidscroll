@@ -7,36 +7,43 @@ slug: get-started/react
 
 import Pre from "../../../components/Pre.astro";
 import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
 import Example from "../../../components/Example.astro";
 import PackageTabs from "../../../components/PackageTabs.astro";
 import Callout from "../../../components/Callout.astro";
+import Steps from "../../../components/Steps.astro";
 
-export const components = { pre: Pre, a: Link };
-
-## Install
-
-<PackageTabs pkg="vidscroll" />
+export const components = { pre: Pre, a: Link, table: Table };
 
 vidscroll works with React 18 and 19 in any bundler setup, such as Vite,
 Next.js or Astro. Its one dependency, the video library it uses to read and
 re-encode files, is loaded in the browser only when a video needs it.
 
-## Add a video
+## Set it up
 
-Put a video file where your site serves static files, such as `public/`, and
-give `ScrollVideo` its URL:
+<Steps>
 
-```tsx title="Hero.tsx"
-import { ScrollVideo } from "vidscroll";
+1. **Install vidscroll.**
 
-export function Hero() {
-  return <ScrollVideo src="/videos/hero.mp4" length="400vh" />;
-}
-```
+   <PackageTabs pkg="vidscroll" />
 
-The component takes up `length` of scrolling plus one screen. While you scroll
-through it, the video stays pinned and follows the scroll. Content above and
-below it scrolls normally.
+2. **Put a video in your public folder.** Any MP4 or WebM works. In most
+   setups, `public/videos/hero.mp4` is served at `/videos/hero.mp4`.
+
+3. **Add `ScrollVideo` where the video should appear.**
+
+   ```tsx title="Hero.tsx"
+   import { ScrollVideo } from "vidscroll";
+
+   export function Hero() {
+     return <ScrollVideo src="/videos/hero.mp4" length="400vh" />;
+   }
+   ```
+
+</Steps>
+
+That's a working scroll video. The rest of this page covers showing content
+over it, how it sits in your layout, and preparing the file for production.
 
 ## Show content over the video
 
@@ -63,31 +70,85 @@ export function Hero() {
 <Example name="basic" />
 
 `start` and `end` are positions in the scroll, from 0 to 1. Sections can also
-use seconds (`fromTime`, `toTime`) or frame numbers.
+use seconds (`fromTime`, `toTime`) or frame numbers. Content outside a
+`Section` stays on screen the whole time.
 
-## Prepare the video
+## How it sits in your page
 
-Any MP4 or WebM works: videos that are slow to scrub are re-encoded in the
-browser on the first visit and cached. For production, prepare the file once
-instead, so every visitor gets smooth scrubbing straight away:
+`ScrollVideo` renders a full-width block. Its height is `length` plus one
+screen: with `length="400vh"`, the block is five screens tall, and the video is
+pinned for the first four while the page scrolls past. Content before and after
+it scrolls normally, and a page can hold several scroll videos.
 
-<PackageTabs pkg="ffmpeg-static" dev />
-
-```bash
-npx vidscroll encode hero.mp4
-```
-
-This writes `hero.scroll.mp4` next to the original. `ffmpeg-static` provides
-ffmpeg for the command; if ffmpeg is already installed on your system, you can
-skip it.
-
-<Callout title="Content below the video">
-  Set `length` explicitly when other content follows the video. With the
-  default `"auto"`, the length depends on the video's duration, which is only
-  known once it loads, so anything below moves down at that point.
+<Callout kind="warning" title="If the video scrolls away instead of pinning">
+  The pinning uses CSS `position: sticky`, which stops working when any parent
+  element has `overflow: hidden`, `overflow: auto` or `overflow: scroll`. Check
+  the wrappers around `ScrollVideo` (layout components often add one) and
+  remove the overflow, or use `overflow: clip`, which doesn't break sticky.
 </Callout>
+
+Set `length` explicitly when content follows the video. With the default
+`"auto"`, the length comes from the video's duration, which is only known once
+it loads, so anything below moves down at that point.
+
+## What visitors see while it loads
+
+<Table>
+  <thead>
+    <tr><th>Moment</th><th>On screen</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Downloading</td><td>The video's first frame behind a loading bar, or your <code>poster</code> image.</td></tr>
+    <tr><td>Preparing</td><td>A short pass over the timeline so later jumps are fast.</td></tr>
+    <tr><td>Re-encoding (first visit only)</td><td>The original video, already scrollable, with a small progress badge in the corner. Only for files that aren't prepared.</td></tr>
+    <tr><td>Ready</td><td>The video, following the scroll.</td></tr>
+  </tbody>
+</Table>
+
+All of this can be customised or turned off with the `loader` and `poster`
+props. See [ScrollVideo](/docs/react/scroll-video/#loading-and-optimization).
+
+## Prepare the video for production
+
+Smooth scrubbing needs keyframes close together, and most exported videos have
+them seconds apart ([why](/docs/start/how-it-works/#why-keyframes-decide-everything)).
+vidscroll fixes that in the visitor's browser on their first visit, but that
+costs them a few seconds. Preparing the file once, before you deploy, skips
+that step for everyone.
+
+The `vidscroll encode` command does it. It uses **ffmpeg**, the standard
+command-line video tool, which vidscroll doesn't bundle because it's a large
+native program. The easiest way to get it is the `ffmpeg-static` package. It's
+a development dependency: it runs on your machine or in CI and is never sent to
+visitors.
+
+<Steps>
+
+1. **Get ffmpeg.** Skip this if `ffmpeg` already works in your terminal.
+
+   <PackageTabs pkg="ffmpeg-static" dev />
+
+2. **Prepare the file.**
+
+   ```bash
+   npx vidscroll encode public/videos/hero.mp4
+   ```
+
+3. **Use the prepared file.** The command writes `hero.scroll.mp4` next to the
+   original.
+
+   ```tsx title="Hero.tsx"
+   <ScrollVideo src="/videos/hero.scroll.mp4" length="400vh" />
+   ```
+
+</Steps>
+
+The prepared file has a keyframe every 10 frames, is at most 720p on its short
+side, has no audio track, and is set up to start playing before it finishes
+downloading. Options such as `--resolution 1080` are listed in the
+[README's CLI reference](https://github.com/nikhilswain/vidscroll#cli-reference).
 
 ## Next steps
 
 - [ScrollVideo](/docs/react/scroll-video/): every option, with live examples.
-- [Next.js](/docs/get-started/nextjs/): server components and client components.
+- [Next.js](/docs/get-started/nextjs/): server and client components.
