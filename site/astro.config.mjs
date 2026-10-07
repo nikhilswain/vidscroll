@@ -4,6 +4,7 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import { vidscrollTheme } from "./src/lib/shiki-theme.mjs";
 import { codeMeta } from "./src/lib/shiki-transformers.mjs";
+import { demosDev } from "./src/lib/demos-dev.mjs";
 
 const base = process.env.SITE_BASE ?? "/vidscroll";
 
@@ -15,7 +16,7 @@ export default defineConfig({
   trailingSlash: "ignore",
   publicDir: "../demo/public",
   outDir: "../dist-site",
-  integrations: [react(), mdx()],
+  integrations: [react(), mdx(), demosDev(base)],
   markdown: {
     shikiConfig: { theme: vidscrollTheme, wrap: false, transformers: [codeMeta] },
   },
