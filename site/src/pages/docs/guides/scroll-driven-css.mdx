@@ -1,0 +1,105 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Scroll-driven CSS
+description: Reveals, progress bars and other effects from two CSS variables, with no JavaScript.
+slug: guides/scroll-driven-css
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+vidscroll exposes the scroll position as CSS variables, so most visual effects
+need no JavaScript and cause no React re-renders:
+
+<Table>
+  <thead>
+    <tr><th>Variable</th><th>Set on</th><th>Goes from 0 to 1</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>--video-progress</code></td><td>The <code>ScrollVideo</code> block</td><td>Across the whole video</td></tr>
+    <tr><td><code>--progress</code></td><td>Each <code>Section</code></td><td>Across that section's range (0 before it, 1 after)</td></tr>
+  </tbody>
+</Table>
+
+Both are inherited, so anything inside can use them. They follow the smoothed
+scroll, the same motion as the video.
+
+<Example name="scroll-css" />
+
+## A progress bar
+
+A bar along the bottom that fills as you scroll through the video:
+
+```tsx title="Hero.tsx"
+<ScrollVideo src="/videos/hero.mp4" length="400vh">
+  <div className="progress-bar" />
+</ScrollVideo>
+```
+
+```css title="styles.css"
+.progress-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: white;
+  transform-origin: left;
+  transform: scaleX(var(--video-progress));
+}
+```
+
+`transform: scaleX()` is cheaper to animate than `width`, which matters on
+phones.
+
+## A circular reveal
+
+A section at the start whose black mask opens like a camera iris:
+
+```tsx title="Hero.tsx"
+<Section start={0} end={0.2} className="iris">
+  <div className="iris__mask" />
+  <h2>The Commute</h2>
+</Section>
+```
+
+```css title="styles.css"
+.iris__mask {
+  position: absolute;
+  inset: 0;
+  --r: calc(var(--progress) * 80vmax);
+  background: radial-gradient(circle, transparent var(--r), #000 var(--r));
+}
+
+.iris h2 {
+  position: relative;
+  opacity: calc(1 - var(--progress) * 2);
+}
+```
+
+## Mapping progress to any value
+
+Most effects are one `calc()` away:
+
+<Table>
+  <thead>
+    <tr><th>Effect</th><th>CSS</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Move up 80px into place</td><td><code>translate: 0 calc((1 - var(--progress)) * 80px)</code></td></tr>
+    <tr><td>Fade in over the first half</td><td><code>opacity: clamp(0, var(--progress) * 2, 1)</code></td></tr>
+    <tr><td>Fade out over the second half</td><td><code>opacity: clamp(0, 2 - var(--progress) * 2, 1)</code></td></tr>
+    <tr><td>Grow from 90% to 100%</td><td><code>scale: calc(0.9 + var(--progress) * 0.1)</code></td></tr>
+    <tr><td>One full turn over the video</td><td><code>rotate: calc(var(--video-progress) * 1turn)</code></td></tr>
+  </tbody>
+</Table>
+
+For effects that need JavaScript, such as changing numbers or SVG paths, see
+[Live values](/docs/guides/live-values/).
+
+## Related
+
+- [Section](/docs/react/section/): ranges and active state.
+- [Text synced to the video](/docs/guides/text/): fades and staggered lines.

@@ -8,6 +8,16 @@ import progress from "./progress";
 import progressSource from "./progress.tsx?raw";
 import hooks from "./hooks";
 import hooksSource from "./hooks.tsx?raw";
+import captions from "./captions";
+import captionsSource from "./captions.tsx?raw";
+import scrollCss from "./scroll-css";
+import scrollCssSource from "./scroll-css.tsx?raw";
+import chapters from "./chapters";
+import chaptersSource from "./chapters.tsx?raw";
+import liveValues from "./live-values";
+import liveValuesSource from "./live-values.tsx?raw";
+import cdn from "./cdn";
+import cdnSource from "./cdn.tsx?raw";
 import frames from "./frames";
 import framesSource from "./frames.tsx?raw";
 
@@ -47,6 +57,39 @@ export const EXAMPLES: Record<string, ExampleEntry> = {
     title: "Hooks: timecode, progress bar and chapters",
     component: hooks,
     source: hooksSource,
+    timeline: [],
+  },
+  captions: {
+    title: "Captions and staggered lines",
+    component: captions,
+    source: captionsSource,
+    timeline: [
+      { id: "doors", label: "1 s to 6 s", start: 1 / 29.16, end: 6 / 29.16 },
+      { id: "stanza", label: "stanza, 0.45 to 0.85", start: 0.45, end: 0.85 },
+    ],
+  },
+  "scroll-css": {
+    title: "Scroll-driven CSS",
+    component: scrollCss,
+    source: scrollCssSource,
+    timeline: [{ id: "iris", label: "iris, 0 to 0.2", start: 0, end: 0.2 }],
+  },
+  chapters: {
+    title: "Chapter navigation",
+    component: chapters,
+    source: chaptersSource,
+    timeline: [],
+  },
+  "live-values": {
+    title: "Live values",
+    component: liveValues,
+    source: liveValuesSource,
+    timeline: [],
+  },
+  cdn: {
+    title: "A video from a CDN",
+    component: cdn,
+    source: cdnSource,
     timeline: [],
   },
   frames: {

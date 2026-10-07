@@ -1,0 +1,112 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Live values
+description: Numbers, clocks and SVG drawings that follow the scroll, updated every frame without re-rendering.
+slug: guides/live-values
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Some effects can't be written in CSS: a clock that counts minutes, a number
+that climbs, an SVG ring that fills. For those, `useScrollVideoUpdate` gives
+you the state on every frame, and you write the result straight to the page
+through a ref.
+
+<Example name="live-values" />
+
+## A clock
+
+```tsx title="Clock.tsx"
+import { useRef } from "react";
+import { useScrollVideoUpdate } from "vidscroll";
+
+export function Clock() {
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  useScrollVideoUpdate(({ linearProgress }) => {
+    const minutes = 7 * 60 + 40 + linearProgress * 35;
+    const text = `${Math.floor(minutes / 60)}:${String(Math.floor(minutes % 60)).padStart(2, "0")}`;
+    if (ref.current && ref.current.textContent !== text) ref.current.textContent = text;
+  });
+
+  return <p ref={ref}>7:40</p>;
+}
+```
+
+The clock runs from 7:40 to 8:15 across the video. Writing only when the text
+changes keeps the work small.
+
+## An SVG ring
+
+`pathLength={1}` makes the circle's length 1, so the dash offset is simply
+`1 - progress`:
+
+```tsx title="Ring.tsx"
+import { useRef } from "react";
+import { useScrollVideoUpdate } from "vidscroll";
+
+export function Ring() {
+  const ref = useRef<SVGCircleElement>(null);
+
+  useScrollVideoUpdate(({ linearProgress }) => {
+    ref.current?.setAttribute("stroke-dashoffset", String(1 - linearProgress));
+  });
+
+  return (
+    <svg viewBox="0 0 100 100" width="88" height="88">
+      <circle
+        ref={ref}
+        cx="50"
+        cy="50"
+        r="44"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="6"
+        pathLength={1}
+        strokeDasharray="1"
+        strokeDashoffset="1"
+        transform="rotate(-90 50 50)"
+      />
+    </svg>
+  );
+}
+```
+
+## Why a ref instead of state
+
+The callback runs on every frame while someone scrolls, about 60 times a
+second. Setting React state that often re-renders the component every frame,
+which costs more than the change itself. Writing to the DOM through a ref
+skips React entirely.
+
+`useScrollVideoState` is fine for values that change rarely, like the name of
+the current chapter. For anything continuous, use `useScrollVideoUpdate` with a
+ref.
+
+## What the callback receives
+
+<Table>
+  <thead>
+    <tr><th>Field</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>linearProgress</code></td><td>Smoothed scroll progress, 0 to 1</td></tr>
+    <tr><td><code>time</code></td><td>Video time in seconds</td></tr>
+    <tr><td><code>frameIndex</code>, <code>totalFrames</code></td><td>Current frame and frame count</td></tr>
+    <tr><td><code>duration</code></td><td>Video length in seconds</td></tr>
+    <tr><td><code>activeSections</code></td><td>Ids of the active sections</td></tr>
+  </tbody>
+</Table>
+
+Use `linearProgress` for things tied to the scroll, and `time` for things tied
+to the footage.
+
+## Related
+
+- [Hooks](/docs/react/hooks/): all three hooks.
+- [Scroll-driven CSS](/docs/guides/scroll-driven-css/): effects that need no JavaScript.

@@ -1,0 +1,82 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Measuring on real devices
+description: Check how smoothly a scroll video runs on phones and computers, with numbers instead of impressions.
+slug: guides/measuring
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+A scroll video can feel smooth on a fast laptop and stutter on a phone. Most
+visitors are on phones, so test on one, and measure rather than judge by eye.
+
+## The stats panel on the demo site
+
+The demo site has a built-in readout. Add `?stats` to its address on the device
+you want to test, open a demo, and scroll:
+
+```text
+https://vidscroll.ze-ro.workers.dev/?stats
+```
+
+<Table>
+  <thead>
+    <tr><th>Reading</th><th>What it tells you</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Frames shown per second while scrolling</td><td>How smooth the video looks. 30 or more reads as smooth</td></tr>
+    <tr><td>Jump between shown frames</td><td>How many video frames are skipped between two shown frames. Small is good</td></tr>
+    <tr><td>Seek time</td><td>How long the browser takes to show a requested frame</td></tr>
+    <tr><td>Page frame rate and long frames</td><td>Whether the rest of the page keeps up. Frames over 50 ms are visible hitches</td></tr>
+    <tr><td>Usable after, re-encode</td><td>How long until scrolling works, and how long an in-browser re-encode took</td></tr>
+  </tbody>
+</Table>
+
+**Copy report** puts all of it, plus the device details, on the clipboard.
+Compare reports before and after a change.
+
+<Callout title="Use HTTPS on phones">
+  In-browser re-encoding and caching only work on secure pages. A phone loading
+  your dev server over plain HTTP on the local network can't use them, so its
+  results won't match production. Test on an HTTPS deployment, or use the
+  demo site.
+</Callout>
+
+## On your own page
+
+- **The console.** vidscroll logs a warning for anything that hurts scrubbing:
+  sparse keyframes, a re-encode, a large or long file, a failed CORS read. No
+  warnings is the goal.
+- **`onLoad`.** Its `source` tells you how the video was served: `"original"`
+  (the file was fine as it is), `"optimized"` (re-encoded this visit), `"cache"`
+  (re-encoded on an earlier visit) or `"stream"` (couldn't be read).
+- **Remote debugging.** On Android, connect the phone over USB and open
+  `chrome://inspect` in desktop Chrome to see the phone's console and record a
+  performance profile while you scroll. Safari offers the same for iPhones
+  through its Develop menu.
+- **`debug`.** The `debug` prop logs the engine's internals to the console,
+  which is mostly useful when reporting a problem.
+
+## What usually helps
+
+<Table>
+  <thead>
+    <tr><th>Symptom</th><th>Try</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Low frames shown per second, slow seeks</td><td>Prepare the file with <Link href="/docs/videos/cli/">the CLI</Link>, or lower its resolution</td></tr>
+    <tr><td>Low page frame rate, many long frames</td><td>Simplify the effects on top: avoid animated blur and large shadows</td></tr>
+    <tr><td>Long wait before scrolling works</td><td>A smaller file, or a prepared one so no re-encode runs</td></tr>
+    <tr><td>Big jumps while flicking fast</td><td>Normal at very high speeds; <code>smoothScroll</code> evens out wheel scrolling</td></tr>
+  </tbody>
+</Table>
+
+## Related
+
+- [Why seeking stutters](/docs/videos/why-seeking-stutters/): the main cause of low frame rates.
+- [Easing and feel](/docs/guides/easing/): smoothing and smooth scrolling.

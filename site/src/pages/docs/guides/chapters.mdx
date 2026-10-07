@@ -1,0 +1,87 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Chapter navigation
+description: Buttons that jump to a scene and show which one you're in.
+slug: guides/chapters
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Chapters combine two things: knowing which scene the video is in, and
+scrolling the page to another one. A click scrolls smoothly, so the video
+scrubs through everything on the way.
+
+<Example name="chapters" />
+
+## The component
+
+```tsx title="ChapterNav.tsx"
+import { useState } from "react";
+import { useScrollVideo, useScrollVideoUpdate } from "vidscroll";
+
+const CHAPTERS = [
+  { title: "Doors", at: 0 },
+  { title: "Carriage", at: 4 },
+  { title: "Open water", at: 12 },
+  { title: "Away", at: 24 },
+];
+
+export function ChapterNav() {
+  const { api } = useScrollVideo();
+  const [current, setCurrent] = useState(0);
+
+  useScrollVideoUpdate(({ time }) => {
+    let index = 0;
+    CHAPTERS.forEach((chapter, i) => {
+      if (time >= chapter.at) index = i;
+    });
+    setCurrent(index);
+  });
+
+  return (
+    <nav className="chapters" aria-label="Chapters" style={{ pointerEvents: "auto" }}>
+      {CHAPTERS.map((chapter, i) => (
+        <button key={chapter.title} aria-current={i === current} onClick={() => api?.scrollToTime(chapter.at + 0.5)}>
+          {chapter.title}
+        </button>
+      ))}
+    </nav>
+  );
+}
+```
+
+Render `<ChapterNav />` inside your `ScrollVideo`: the hooks read from the
+nearest one.
+
+## How it works
+
+- **The current chapter** comes from `useScrollVideoUpdate`, which runs every
+  frame. Calling `setCurrent` with the same index doesn't re-render, so React
+  only updates when the chapter actually changes.
+- **Jumping** uses `api.scrollToTime`. It scrolls the page, smoothly by
+  default; pass `{ behavior: "instant" }` to jump without scrubbing through.
+- **The half-second offset** (`chapter.at + 0.5`) lands just inside the
+  chapter, so the right button is highlighted after the jump.
+- **`pointerEvents: "auto"`** is needed because the layer over the video
+  ignores clicks by default.
+
+Style the current button with `button[aria-current="true"]`. The same attribute
+tells screen readers which chapter is current.
+
+## A menu outside the video
+
+The hooks only work inside the `ScrollVideo`. For a chapter list elsewhere on
+the page, keep the component that calls `useScrollVideo` inside the video and
+lift the `api` up through your own state or context. With the
+[element](/docs/without-react/element/), any script can call
+`element.scrollToTime()` directly.
+
+## Related
+
+- [Hooks](/docs/react/hooks/): all three hooks and the api.
+- [Live values](/docs/guides/live-values/): more per-frame updates through refs.

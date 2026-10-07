@@ -1,0 +1,81 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Videos from other domains
+description: Using videos from a CDN or storage bucket, and the headers that make them work well.
+slug: guides/other-domains
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+`src` can be any direct link to a video file: on your own site, on a CDN, or in
+a storage bucket. This example loads the docs video from jsDelivr, a public CDN:
+
+<Example name="cdn" />
+
+```tsx title="Hero.tsx"
+<ScrollVideo
+  src="https://cdn.jsdelivr.net/gh/nikhilswain/vidscroll@v0.3.2/demo/public/train.mp4"
+  length="400vh"
+  onLoad={(info) => console.log(info.source)}
+/>
+```
+
+## What the server needs to send
+
+<Table>
+  <thead>
+    <tr><th>Header</th><th>Why</th><th>Without it</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>Access-Control-Allow-Origin</code></td><td>Lets your site read the file, so vidscroll can check and re-encode it</td><td>The video is streamed directly instead: it plays, but isn't optimized or cached</td></tr>
+    <tr><td><code>Accept-Ranges: bytes</code></td><td>Lets the browser request parts of the file, which streaming and seeking rely on</td><td>Streaming and seeking can break, especially in Safari</td></tr>
+    <tr><td><code>ETag</code>, <code>Last-Modified</code> or <code>Content-Length</code></td><td>Identifies the file, so an optimized copy can be cached</td><td>The re-encode runs on every visit</td></tr>
+    <tr><td><code>Content-Type: video/mp4</code> (or <code>video/webm</code>)</td><td>Says it's a video</td><td>An HTML response is rejected with a clear error</td></tr>
+  </tbody>
+</Table>
+
+jsDelivr sends all of these. For a bucket on S3, Cloudflare R2, Google Cloud
+Storage or similar, add a CORS rule that allows `GET` from your site's origin;
+the other headers are usually sent already.
+
+## When CORS is missing
+
+If the file can't be read, vidscroll logs this and streams it instead:
+
+```text title="Console"
+[vidscroll] Couldn't read "https://…/hero.mp4" (network error or CORS). Streaming it directly instead — scrubbing will be slow unless the file is already encoded for it. If it's on another domain, the server must send Access-Control-Allow-Origin for this site.
+```
+
+A streamed video plays, but vidscroll can't check its keyframes, re-encode it
+or cache it. So for files without CORS, [prepare them with the CLI](/docs/videos/cli/)
+before uploading: a prepared file scrubs well even when streamed. `onLoad`
+reports `source: "stream"` in this case.
+
+## Checking a URL
+
+Run this to see the headers a server sends:
+
+```bash
+curl -sI https://cdn.example.com/videos/hero.mp4
+```
+
+Look for `access-control-allow-origin`, `accept-ranges: bytes` and an `etag` or
+`last-modified` line.
+
+<Callout kind="warning" title="Video pages are not video files">
+  Links to YouTube, Vimeo, TikTok, Instagram, Facebook, X, Dailymotion or Twitch
+  pages are rejected with an error that explains why: their streams are signed,
+  expire, and can't be read by other sites. HLS and DASH streams (`.m3u8`,
+  `.mpd`) are rejected too. Use a single video file you host.
+</Callout>
+
+## Related
+
+- [Automatic optimization](/docs/videos/automatic-optimization/): what CORS enables.
+- [Pre-encoding with the CLI](/docs/videos/cli/): files that scrub well anywhere.

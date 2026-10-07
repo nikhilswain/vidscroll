@@ -1,0 +1,92 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Text synced to the video
+description: Captions that appear with a scene, fade at their edges, or rise in line by line.
+slug: guides/text
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Text over a scroll video is built from sections. A section is active over a
+range, and its `--progress` variable goes from 0 to 1 across that range, so CSS
+alone can fade, move or stagger the text inside it.
+
+<Example name="captions" />
+
+## Tie a caption to a scene
+
+When the text belongs to a moment in the footage, give the section a time
+range. It stays on its scene whatever `length` or `easing` you use:
+
+```tsx title="Captions.tsx"
+<Section fromTime={1} toTime={6} className="caption">
+  <p>Doors close. Another morning.</p>
+</Section>
+```
+
+Use `start` and `end` (0 to 1) instead when the text belongs to a stretch of
+scrolling rather than to the footage.
+
+## Fade at the edges of the range
+
+Sections already fade as a whole when they turn on and off. For a softer
+caption, fade it within its range:
+
+```css title="styles.css"
+.caption p {
+  opacity: clamp(0, min(var(--progress) / 0.15, (1 - var(--progress)) / 0.15), 1);
+}
+```
+
+The text fades in over the first 15% of the range and out over the last 15%.
+Change `0.15` to make the fades longer or shorter.
+
+## Lines that rise in one by one
+
+Give each line its index as `--i`, and the group its line count as `--n`:
+
+```tsx title="Stanza.tsx"
+const lines = ["The carriage hums.", "The window fogs.", "Somewhere, the sea."];
+
+<Section start={0.45} end={0.85}>
+  <div className="stanza" style={{ "--n": lines.length } as React.CSSProperties}>
+    {lines.map((line, i) => (
+      <p key={line} style={{ "--i": i } as React.CSSProperties}>{line}</p>
+    ))}
+  </div>
+</Section>
+```
+
+```css title="styles.css"
+.stanza p {
+  --enter: clamp(0, (var(--progress) / 0.32 * (var(--n) + 1) - var(--i)) / 2, 1);
+  --exit: clamp(0, ((var(--progress) - 0.56) / 0.38 * (var(--n) + 1) - var(--i)) / 2, 1);
+  opacity: calc(var(--enter) - var(--exit));
+  transform: translateY(calc((1 - var(--enter)) * 1.1em - var(--exit) * 1.3em));
+}
+```
+
+Lines enter during the first 32% of the range, hold until 56%, then leave
+upward in the same order. Each line overlaps the next by half its animation.
+
+<Callout title="Keep the effects light on phones">
+  Opacity and `transform` are cheap to animate. Animated `filter: blur()` and
+  large text shadows are not: they can make scrolling stutter on phones.
+</Callout>
+
+## Placing text
+
+Sections cover the video and centre their content. Move it with ordinary CSS
+on the section, such as `align-items: flex-end` and some bottom padding for a
+subtitle position, as in the example.
+
+## Related
+
+- [Section](/docs/react/section/): every range option.
+- [Scroll-driven CSS](/docs/guides/scroll-driven-css/): more effects from the same variables.

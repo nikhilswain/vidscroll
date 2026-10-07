@@ -1,0 +1,109 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Custom loaders
+description: Replace, restyle or remove the loading overlay and the re-encode badge.
+slug: guides/loaders
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+While a video loads, `ScrollVideo` shows a translucent overlay with a progress
+bar. During an in-browser re-encode, the overlay gives way to a small badge in
+the corner, because the original video can already be scrolled. Both can be
+replaced, restyled or removed.
+
+## The loading states
+
+<Table>
+  <thead>
+    <tr><th>Phase</th><th>When</th><th>Covers the video?</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>download</code></td><td>The file is being fetched</td><td>Yes</td></tr>
+    <tr><td><code>preparing</code></td><td>A quick pass over the timeline before scrubbing starts</td><td>Yes</td></tr>
+    <tr><td><code>optimize</code></td><td>The browser is re-encoding the video</td><td>No: corner badge, the original is already scrollable</td></tr>
+    <tr><td><code>error</code></td><td>The video can't be loaded or played</td><td>Yes, with the error message</td></tr>
+  </tbody>
+</Table>
+
+With `optimize={{ wait: true }}`, the `optimize` phase covers the video too.
+
+## Your own loader
+
+Pass a function to `loader`. It receives the state and the built-in loader for
+that state, so you can wrap or replace it:
+
+```tsx title="Hero.tsx"
+<ScrollVideo
+  src="/videos/hero.mp4"
+  loader={(state, builtIn) =>
+    state.background ? builtIn : <p className="loading">Loading {Math.round(state.progress * 100)}%</p>
+  }
+/>
+```
+
+The state has `phase`, `progress` (0 to 1), `background` (true for the corner
+badge) and `error` (in the error phase). Returning `null` shows nothing for that
+state.
+
+Other forms:
+
+<Table>
+  <thead>
+    <tr><th><code>loader</code></th><th>Result</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>not set</td><td>The built-in overlay and badge</td></tr>
+    <tr><td>a React element</td><td>Shown while the video is covered; no badge during a re-encode</td></tr>
+    <tr><td>a function</td><td>Called for every state, including the badge</td></tr>
+    <tr><td><code>false</code></td><td>Nothing at all</td></tr>
+  </tbody>
+</Table>
+
+Errors always show their message unless you handle the `error` phase in a
+function. `onError` receives the same error if you'd rather show it elsewhere.
+
+## Restyling the built-in one
+
+The built-in loader is plain markup with attributes you can target from CSS:
+
+```css title="styles.css"
+[data-vidscroll-loader] {
+  background: rgb(0 0 0 / 0.8);
+}
+
+[data-vidscroll-loader][data-background] {
+  inset: 16px 16px auto auto;
+}
+
+[data-vidscroll-loader][data-phase="download"] {
+  font-family: Georgia, serif;
+}
+```
+
+The second rule moves the badge to the top-right corner. To keep the overlay
+but hide the badge, set `display: none` on `[data-vidscroll-loader][data-background]`.
+
+## What's behind the loader
+
+By default the video's first frame shows behind the loading overlay. `poster`
+shows an image instead, or nothing:
+
+```tsx title="Hero.tsx"
+<ScrollVideo src="/videos/hero.mp4" poster="/images/hero-poster.jpg" />
+```
+
+<Callout title="With the element">
+  `<vid-scroll>` takes a child with `slot="loader"` and the `loader="none"`
+  attribute instead. See [the element's styling section](/docs/without-react/element/#styling).
+</Callout>
+
+## Related
+
+- [Automatic optimization](/docs/videos/automatic-optimization/): what the re-encode phase is.
+- [ScrollVideo](/docs/react/scroll-video/#props): the `loader` and `poster` props.

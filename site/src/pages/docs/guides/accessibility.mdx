@@ -1,0 +1,79 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Accessibility
+description: What vidscroll does for accessibility, and what to keep in mind when you build with it.
+slug: guides/accessibility
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+A scroll video is driven entirely by the reader: nothing moves unless they
+scroll. That avoids the biggest problem with motion on the web, but a few
+things still need care.
+
+## What vidscroll handles
+
+- **Reduced motion.** `smoothScroll` turns itself off when the visitor has
+  asked their system for reduced motion, so the page scrolls normally.
+- **Keyboard scrolling.** Arrow keys, Page Down and Space scroll the page and
+  the video as usual. Smooth scrolling never interferes with them.
+- **Real text.** Section content is ordinary HTML, not part of the video, so
+  it can be read by screen readers, translated, selected and zoomed.
+- **No sound.** Scroll-driven video is always muted, so there's no audio to
+  caption.
+
+## What to keep in mind
+
+### Inactive sections are hidden
+
+Sections are hidden while inactive, from screen readers too. A screen reader
+user scrolling with the keyboard hears each section as it becomes active, but
+can't read ahead. If a section holds information people need, such as a key
+fact or a link, also put it somewhere that's always available, for example in
+the page content after the video.
+
+### The video carries no meaning on its own
+
+The video itself has no text alternative. Make sure the story is told by the
+text in your sections and the page around the video, so someone who can't see
+the video doesn't miss anything important.
+
+### Contrast over moving pictures
+
+Text over video changes contrast as the footage changes. Give captions a
+background, a strong shadow, or place them over a darker part of the frame.
+Check them against the brightest frames of the video, not just the first one.
+
+### Buttons over the video
+
+Content outside a section ignores clicks by default; interactive elements need
+`pointer-events: auto`. Buttons inside a section can only be reached by
+keyboard while that section is active. Put controls that should always work,
+such as chapter buttons, outside any section.
+
+### Very long scroll videos
+
+A long `length` means a lot of scrolling for keyboard and switch users. Keep
+videos short, and add a way to skip past, such as a link to the content after
+the video:
+
+```tsx title="Hero.tsx"
+<a href="#after-video" className="skip-link">Skip the video</a>
+<ScrollVideo src="/videos/hero.mp4" length="400vh" />
+<section id="after-video">…</section>
+```
+
+<Callout title="Flashing">
+  Avoid footage with rapid flashes or strong flicker. Scrubbing quickly can
+  make flashes faster than in normal playback.
+</Callout>
+
+## Related
+
+- [Section](/docs/react/section/): active state and clicks.
+- [Chapter navigation](/docs/guides/chapters/): `aria-current` for the current chapter.

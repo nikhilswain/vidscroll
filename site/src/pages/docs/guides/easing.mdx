@@ -1,0 +1,91 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Easing and feel
+description: Shape how the video responds to scrolling with easing curves, smooth scrolling and smoothing.
+slug: guides/easing
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Three settings decide how a scroll video feels. `easing` reshapes which part of
+the video you see at each scroll position, `smoothScroll` evens out mouse-wheel
+steps, and `smoothingTauMs` sets how closely the video follows. Try them here:
+
+<Example name="options" controls />
+
+## Easing curves
+
+Without easing, scrolling moves through the video at a constant rate. A curve
+spends more scrolling on some parts and less on others:
+
+<Table>
+  <thead>
+    <tr><th>Curve</th><th>Feels like</th><th>Good for</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>none</code></td><td>Even throughout</td><td>Footage where every moment matters equally</td></tr>
+    <tr><td><code>inQuad</code>, <code>inCubic</code></td><td>Slow start, then faster</td><td>A slow opening that builds up</td></tr>
+    <tr><td><code>outQuad</code>, <code>outCubic</code></td><td>Fast start, slow ending</td><td>Landing gently on a final shot</td></tr>
+    <tr><td><code>inOutQuad</code>, <code>inOutCubic</code>, <code>inOutSine</code></td><td>Slow at both ends</td><td>Lingering on the first and last frames, like a product reveal</td></tr>
+  </tbody>
+</Table>
+
+The cubic curves are stronger than the quad ones; `inOutSine` is the gentlest
+of the slow-at-both-ends curves.
+
+## Your own curve
+
+`easing` also takes a function from 0 to 1:
+
+```tsx title="Hero.tsx"
+<ScrollVideo src="/videos/hero.mp4" easing={(t) => t * t * (3 - 2 * t)} />
+```
+
+It must start at 0, end at 1, and never go backwards. Time-based section
+ranges and `scrollToTime` work out positions by running the curve in reverse,
+so a curve that doubles back would put them in the wrong place. In Next.js
+server components, use a preset name instead; functions can only be passed
+from client components.
+
+## Smooth scrolling
+
+`smoothScroll` eases wheel scrolling for the whole page, turning a mouse
+wheel's steps into a glide. It handles wheel events, which includes most
+trackpads; touch and keyboard scrolling are left alone. It turns itself off
+when the visitor has asked for reduced motion.
+
+```tsx title="Hero.tsx"
+<ScrollVideo src="/videos/hero.mp4" smoothScroll={{ tau: 120 }} />
+```
+
+`tau` (85 ms by default) is how long the glide takes to catch up;
+`wheelMultiplier` (1) scales how far each wheel step goes. Smooth scrolling
+affects the whole page, so with several scroll videos it's set up once, and the
+first one's options apply.
+
+## Smoothing
+
+Independently of the page scroll, the video follows the scroll position with a
+short delay set by `smoothingTauMs`: 100 ms by default, 35 ms with
+`smoothScroll` on, since the page scroll is already smooth then. Lower values
+follow more tightly, higher values glide more.
+
+After a fast flick, the follow loosens briefly so the video glides to a stop
+instead of jumping. A large jump, like dragging the scrollbar, catches up at
+the normal rate.
+
+<Callout title="Changing these later">
+  `easing` and `smoothingTauMs` apply immediately when they change.
+  `smoothScroll` takes effect when it's turned on or off.
+</Callout>
+
+## Related
+
+- [ScrollVideo](/docs/react/scroll-video/#how-scrolling-maps-to-the-video): the full chain from scroll to frame.
+- [How it works](/docs/start/how-it-works/): what happens on each frame.
