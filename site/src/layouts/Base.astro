@@ -1,9 +1,11 @@
 ---
+import "../styles/base.css";
+import { withBase } from "../lib/url";
+
 interface Props {
   title: string;
   description?: string;
 }
-import { withBase } from "../lib/url";
 const { title, description } = Astro.props;
 ---
 <!doctype html>
@@ -13,6 +15,7 @@ const { title, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
   </head>
   <body>

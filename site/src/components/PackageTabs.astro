@@ -1,0 +1,53 @@
+---
+import CopyButton from "./CopyButton.astro";
+
+interface Props {
+  pkg: string;
+  dev?: boolean;
+}
+const { pkg, dev = false } = Astro.props;
+const managers = [
+  { id: "npm", command: `npm install ${dev ? "-D " : ""}${pkg}` },
+  { id: "pnpm", command: `pnpm add ${dev ? "-D " : ""}${pkg}` },
+  { id: "yarn", command: `yarn add ${dev ? "-D " : ""}${pkg}` },
+  { id: "bun", command: `bun add ${dev ? "-d " : ""}${pkg}` },
+];
+---
+<div class="code code--terminal pm" data-code data-pm>
+  <div class="code__head">
+    <div class="pm__tabs" role="tablist" aria-label="Package manager">
+      {managers.map((m, i) => (
+        <button type="button" role="tab" class="pm__tab" data-pm-tab={m.id} aria-selected={i === 0 ? "true" : "false"}>{m.id}</button>
+      ))}
+    </div>
+    <CopyButton />
+  </div>
+  {managers.map((m, i) => (
+    <pre class="pm__panel" role="tabpanel" data-pm-panel={m.id} hidden={i !== 0}><code><span class="line">{m.command}</span></code></pre>
+  ))}
+</div>
+<script>
+  const KEY = "vidscroll-docs-pm";
+  const select = (id: string) => {
+    document.querySelectorAll<HTMLElement>("[data-pm]").forEach((box) => {
+      box.querySelectorAll<HTMLButtonElement>("[data-pm-tab]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pmTab === id)));
+      box.querySelectorAll<HTMLElement>("[data-pm-panel]").forEach((p) => {
+        const show = p.dataset.pmPanel === id;
+        p.hidden = !show;
+        p.toggleAttribute("data-current", show);
+      });
+    });
+  };
+  document.querySelectorAll<HTMLButtonElement>("[data-pm-tab]").forEach((tab) =>
+    tab.addEventListener("click", () => {
+      select(tab.dataset.pmTab!);
+      try {
+        localStorage.setItem(KEY, tab.dataset.pmTab!);
+      } catch {}
+    })
+  );
+  try {
+    const saved = localStorage.getItem(KEY);
+    if (saved) select(saved);
+  } catch {}
+</script>

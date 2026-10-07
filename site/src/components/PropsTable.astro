@@ -1,0 +1,31 @@
+---
+interface Row {
+  name: string;
+  type: string;
+  default?: string;
+  description: string;
+  href?: string;
+}
+interface Props {
+  rows: Row[];
+}
+const { rows } = Astro.props;
+const isLiteral = (value: string) => /^(["'\d]|true$|false$|null$)/.test(value);
+---
+<div class="table-wrap">
+  <table class="props">
+    <thead>
+      <tr><th scope="col">Prop</th><th scope="col">Type</th><th scope="col">Default</th><th scope="col">Description</th></tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr>
+          <th scope="row">{row.href ? <a href={row.href}><code>{row.name}</code></a> : <code>{row.name}</code>}</th>
+          <td><code>{row.type}</code></td>
+          <td>{row.default ? (isLiteral(row.default) ? <code>{row.default}</code> : <span class="props__text">{row.default}</span>) : <span class="props__none">none</span>}</td>
+          <td set:html={row.description} />
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

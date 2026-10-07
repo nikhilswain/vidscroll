@@ -1,0 +1,222 @@
+---
+import { Code } from "astro:components";
+import { easing } from "vidscroll";
+import { EXAMPLES, displaySource } from "../examples";
+import { vidscrollTheme } from "../lib/shiki-theme.mjs";
+import { codeMeta } from "../lib/shiki-transformers.mjs";
+import { withBase } from "../lib/url";
+import CopyButton from "./CopyButton.astro";
+
+interface Props {
+  name: string;
+  poster?: string;
+  controls?: boolean;
+  caption?: string;
+  file?: string;
+}
+const { name, poster = "posters/train.jpg", controls = false, caption, file = "Example.tsx" } = Astro.props;
+const entry = EXAMPLES[name];
+const src = withBase(`examples/${name}/`);
+const code = entry.source ? displaySource(entry.source).trim() : "";
+const lines = code.split("\n").length;
+
+const curve = (fn: (t: number) => number) =>
+  Array.from({ length: 25 }, (_, i) => {
+    const t = i / 24;
+    return `${i === 0 ? "M" : "L"}${(2 + t * 20).toFixed(1)} ${(14 - fn(t) * 12).toFixed(1)}`;
+  }).join(" ");
+const EASINGS = Object.entries(easing).map(([id, fn]) => ({ id, path: curve(fn) }));
+const segments = (name: string, values: string[], selected: string) => ({ name, values, selected });
+const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segments("fit", ["cover", "contain"], "cover")];
+---
+<figure class="example" data-example data-src={src}>
+  {controls && (
+    <form class="controls" data-controls-form aria-label="Example options">
+      <fieldset class="controls__row">
+        <legend>easing</legend>
+        <div class="chips">
+          {EASINGS.map((e) => (
+            <label class="chip">
+              <input type="radio" name="easing" value={e.id} checked={e.id === "none"} />
+              <svg width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><path d={e.path} fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <span>{e.id}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div class="controls__line">
+        {SEGMENTS.map((g) => (
+          <fieldset class="controls__row">
+            <legend>{g.name}</legend>
+            <div class="segmented">
+              {g.values.map((v) => (
+                <label class="segmented__item">
+                  <input type="radio" name={g.name} value={v} checked={v === g.selected} />
+                  <span>{v}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+        <label class="switch">
+          <input type="checkbox" name="smoothScroll" role="switch" />
+          <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+          <span>smoothScroll</span>
+        </label>
+      </div>
+    </form>
+  )}
+
+  <div class="example__stage">
+    <iframe class="example__frame" title={`Live example: ${entry.title}`} tabindex="0"></iframe>
+    <button type="button" class="example__start" data-start style={`background-image: url(${withBase(poster)})`}>
+      <span>Start the example</span>
+    </button>
+    <button type="button" class="example__full" data-full aria-label="Open the example full screen" aria-pressed="false">
+      <svg class="example__icon-open" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+      <svg class="example__icon-close" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+    </button>
+  </div>
+
+  <div class="timeline" role="group" aria-label="Playback position">
+    <div class="timeline__track" aria-hidden="true">
+      <div class="timeline__fill" data-fill></div>
+      <div class="timeline__head" data-head></div>
+    </div>
+    {entry.timeline.length > 0 && (
+      <div class="timeline__lanes" aria-hidden="true">
+        {entry.timeline.map((r) => (
+          <span class="timeline__range" data-range={r.id} style={`left: ${r.start * 100}%; width: ${(r.end - r.start) * 100}%`}>
+            <span class="timeline__label">{r.label}</span>
+          </span>
+        ))}
+      </div>
+    )}
+    <output class="timeline__readout" data-readout data-idle>Scroll inside the preview</output>
+  </div>
+
+  {(code || controls) && (
+    <div class="code example__code" data-code data-collapsed={lines > 25 ? "" : undefined}>
+      <div class="code__head">
+        <span class="code__file">{file}</span>
+        <CopyButton />
+      </div>
+      {controls ? <pre class="astro-code" data-language="tsx" data-generated><code /></pre> : <Code code={code} lang="tsx" theme={vidscrollTheme} transformers={[codeMeta]} />}
+    </div>
+  )}
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+  const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const examples = [...document.querySelectorAll<HTMLElement>("[data-example]")];
+
+  const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const attr = (name: string, value: string) =>
+    `  <span class="t-attr">${name}</span><span class="t-punct">=</span>${value}`;
+  const str = (v: string) => `<span class="t-string">"${escapeHtml(v)}"</span>`;
+  const generated = (form: HTMLFormElement) => {
+    const data = new FormData(form);
+    const lines = [
+      `<span class="t-keyword">import</span> <span class="t-punct">{</span> ScrollVideo <span class="t-punct">}</span> <span class="t-keyword">from</span> ${str("vidscroll")}<span class="t-punct">;</span>`,
+      "",
+      `<span class="t-punct">&lt;</span><span class="t-tag">ScrollVideo</span>`,
+      attr("src", str("/train.mp4")),
+      attr("length", str(String(data.get("length")))),
+    ];
+    if (data.get("easing") !== "none") lines.push(attr("easing", str(String(data.get("easing")))));
+    if (data.get("fit") !== "cover") lines.push(attr("fit", str(String(data.get("fit")))));
+    if (data.get("smoothScroll")) lines.push(`  <span class="t-attr">smoothScroll</span>`);
+    lines.push(`<span class="t-punct">/&gt;</span>`);
+    return lines.map((line) => `<span class="line">${line}</span>`).join("\n");
+  };
+  const query = (form: HTMLFormElement) => {
+    const data = new FormData(form);
+    return new URLSearchParams({
+      easing: String(data.get("easing")),
+      length: String(data.get("length")),
+      fit: String(data.get("fit")),
+      smoothScroll: String(!!data.get("smoothScroll")),
+    }).toString();
+  };
+
+  for (const example of examples) {
+    const iframe = example.querySelector<HTMLIFrameElement>("iframe")!;
+    const start = example.querySelector<HTMLButtonElement>("[data-start]")!;
+    const full = example.querySelector<HTMLButtonElement>("[data-full]")!;
+    const form = example.querySelector<HTMLFormElement>("[data-controls-form]");
+    const generatedCode = example.querySelector<HTMLElement>("[data-generated] code");
+    const url = () => example.dataset.src! + (form ? `?${query(form)}` : "");
+
+    const begin = () => {
+      if (iframe.getAttribute("src")) return;
+      iframe.src = url();
+      example.classList.add("is-running");
+    };
+    start.addEventListener("click", () => {
+      begin();
+      iframe.focus();
+    });
+    if (fine) {
+      new IntersectionObserver(
+        (entries, observer) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            begin();
+            observer.disconnect();
+          }
+        },
+        { rootMargin: "200px" }
+      ).observe(example);
+    }
+
+    const setFull = (on: boolean) => {
+      example.classList.toggle("is-full", on);
+      full.setAttribute("aria-pressed", String(on));
+      full.setAttribute("aria-label", on ? "Close full screen" : "Open the example full screen");
+      if (on) full.focus();
+      document.body.style.overflow = on ? "hidden" : "";
+      if (on) begin();
+    };
+    full.addEventListener("click", () => setFull(!example.classList.contains("is-full")));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && example.classList.contains("is-full")) setFull(false);
+    });
+
+    if (form && generatedCode) {
+      generatedCode.innerHTML = generated(form);
+      form.addEventListener("change", () => {
+        generatedCode.innerHTML = generated(form);
+        if (iframe.getAttribute("src")) iframe.src = url();
+      });
+    }
+  }
+
+  window.addEventListener("message", (event) => {
+    if (event.origin !== location.origin || event.data?.type !== "vidscroll-example") return;
+    const example = examples.find((ex) => ex.querySelector("iframe")?.contentWindow === event.source);
+    if (!example) return;
+    const { progress, time, duration, active, ready, screens, scrolled } = event.data as {
+      progress: number;
+      time: number;
+      duration: number;
+      active: string[];
+      ready: boolean;
+      screens: number;
+      scrolled: number;
+    };
+    const percent = `${(progress * 100).toFixed(2)}%`;
+    example.querySelector<HTMLElement>("[data-fill]")!.style.width = percent;
+    example.querySelector<HTMLElement>("[data-head]")!.style.left = percent;
+    example.querySelectorAll<HTMLElement>("[data-range]").forEach((r) => r.toggleAttribute("data-active", active.includes(r.dataset.range!)));
+    const readout = example.querySelector<HTMLElement>("[data-readout]")!;
+    readout.removeAttribute("data-idle");
+    if (!ready) {
+      readout.textContent = "Loading";
+      return;
+    }
+    const total = Number.isInteger(Math.round(screens * 10) / 10) ? screens.toFixed(0) : screens.toFixed(1);
+    readout.innerHTML =
+      `<b>video</b> ${time.toFixed(1)} / ${duration.toFixed(1)} s` +
+      `    <b>scroll</b> ${scrolled.toFixed(1)} / ${total} ${total === "1" ? "screen" : "screens"}`;
+  });
+</script>

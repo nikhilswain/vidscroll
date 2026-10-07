@@ -1,0 +1,106 @@
+---
+import type { MarkdownHeading } from "astro";
+import Base from "./Base.astro";
+import Header from "../components/Header.astro";
+import Sidebar from "../components/Sidebar.astro";
+import Toc from "../components/Toc.astro";
+import Search from "../components/Search.astro";
+import { docsHref, neighbours } from "../lib/nav";
+import { withBase } from "../lib/url";
+import "../styles/docs.css";
+
+interface Props {
+  frontmatter: { title: string; description: string; slug: string };
+  headings: MarkdownHeading[];
+}
+const { frontmatter, headings } = Astro.props;
+const { current, prev, next } = neighbours(frontmatter.slug);
+---
+<Base title={`${frontmatter.title} · vidscroll`} description={frontmatter.description}>
+  <a class="skip" href="#content">Skip to content</a>
+  <Header />
+  <div class="docs">
+    <div class="docs__backdrop" data-menu-close hidden></div>
+    <Sidebar slug={frontmatter.slug} />
+    <main class="docs__main" id="content" data-pagefind-body>
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <span>{current?.group}</span>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{frontmatter.title}</span>
+      </nav>
+      <h1 class="docs__title">{frontmatter.title}</h1>
+      <p class="docs__lead">{frontmatter.description}</p>
+      <div class="prose">
+        <slot />
+      </div>
+      <nav class="pager" aria-label="Previous and next pages">
+        {[{ page: prev, label: "Previous", side: "prev" }, { page: next, label: "Next", side: "next" }].map(({ page, label, side }) => {
+          if (!page) return <span />;
+          const arrow = (
+            <svg class="pager__arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path d={side === "prev" ? "M10 3L5 8l5 5" : "M6 3l5 5-5 5"} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          );
+          const body = (
+            <span class="pager__text">
+              <span class="pager__label">{label}</span>
+              <span class="pager__title">{page.title}</span>
+              {!page.slug && <span class="pager__note">Not written yet</span>}
+            </span>
+          );
+          return page.slug ? (
+            <a class={`pager__item pager__item--${side}`} href={withBase(docsHref(page.slug))}>{side === "prev" ? [arrow, body] : [body, arrow]}</a>
+          ) : (
+            <div class={`pager__item pager__item--${side} pager__item--planned`} aria-disabled="true">{side === "prev" ? [arrow, body] : [body, arrow]}</div>
+          );
+        })}
+      </nav>
+    </main>
+    <aside class="docs__toc">
+      <Toc headings={headings} />
+    </aside>
+  </div>
+  <Search />
+  <script>
+    const sidebar = document.getElementById("sidebar")!;
+    const backdrop = document.querySelector<HTMLElement>(".docs__backdrop")!;
+    const openButton = document.querySelector<HTMLButtonElement>("[data-menu-open]")!;
+    const setMenu = (open: boolean) => {
+      sidebar.classList.toggle("is-open", open);
+      backdrop.hidden = !open;
+      openButton.setAttribute("aria-expanded", String(open));
+      document.body.style.overflow = open ? "hidden" : "";
+      if (open) sidebar.querySelector<HTMLElement>("a, button")?.focus();
+      else openButton.focus();
+    };
+    openButton.addEventListener("click", () => setMenu(true));
+    document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", () => setMenu(false)));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sidebar.classList.contains("is-open")) setMenu(false);
+    });
+
+    const links = new Map([...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")].map((a) => [a.dataset.tocLink!, a]));
+    const targets = [...links.keys()].map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+    const markCurrent = () => {
+      let currentId = targets[0]?.id;
+      for (const el of targets) if (el.getBoundingClientRect().top < 120) currentId = el.id;
+      links.forEach((a, id) => a.toggleAttribute("aria-current", id === currentId));
+    };
+    document.addEventListener("scroll", markCurrent, { passive: true });
+    markCurrent();
+
+    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const code = button.closest("[data-code]")?.querySelector("pre:not([hidden])")?.innerText ?? "";
+        await navigator.clipboard.writeText(code.replace(/\n$/, ""));
+        const status = button.querySelector(".code__status");
+        button.classList.add("is-copied");
+        if (status) status.textContent = "Copied";
+        setTimeout(() => {
+          button.classList.remove("is-copied");
+          if (status) status.textContent = "";
+        }, 1500);
+      });
+    });
+  </script>
+</Base>

@@ -1,0 +1,174 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: ScrollVideo
+description: Pins a video to the screen and moves through it frame by frame as the page scrolls.
+slug: react/scroll-video
+---
+
+import Pre from "../../../components/Pre.astro";
+import Example from "../../../components/Example.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+import PropsTable from "../../../components/PropsTable.astro";
+
+export const components = { pre: Pre };
+
+`<ScrollVideo>` takes up a block of the page. While you scroll through that
+block, the video stays pinned to the screen and its position follows the
+scroll: halfway through the block is halfway through the video. Content
+inside it, usually [sections](#sections), sits on top of the video.
+
+<Example name="basic" />
+
+## Basic usage
+
+<PackageTabs pkg="vidscroll" />
+
+Give it a video file and, optionally, how much scrolling the whole video
+should take. Everything inside is drawn over the video.
+
+```tsx title="Hero.tsx"
+import { ScrollVideo } from "vidscroll";
+
+export function Hero() {
+  return <ScrollVideo src="/videos/hero.mp4" length="400vh" />;
+}
+```
+
+The block is as tall as `length` plus one screen. The video is pinned for the
+whole `length`, then the page carries on below it. A page can hold any number
+of scroll videos; each one only plays while you pass through it.
+
+### Sections
+
+Wrap content in `<Section>` to show it over part of the video. A section is
+active while the scroll is inside its range and fades in and out by default.
+Ranges can be given in scroll progress (`start`, `end`), seconds (`fromTime`,
+`toTime`) or frames (`fromFrame`, `toFrame`).
+
+```tsx title="Hero.tsx"
+import { ScrollVideo, Section } from "vidscroll";
+
+export function Hero() {
+  return (
+    <ScrollVideo src="/videos/hero.mp4" length="400vh">
+      <Section start={0} end={0.3}>
+        <h2>Doors close</h2>
+      </Section>
+      <Section fromTime={12} toTime={18}>
+        <h2>Open water</h2>
+      </Section>
+    </ScrollVideo>
+  );
+}
+```
+
+## How scrolling maps to the video
+
+Every frame, vidscroll turns the scroll position into a point in the video:
+
+1. **Progress.** How far you are through the block, from 0 to 1.
+2. **Easing.** An optional curve that reshapes progress, so the video can
+   start slowly or settle at the end.
+3. **Video time.** The eased value times the video's duration.
+4. **Smoothing.** The video follows that time with a short delay, so small
+   scroll steps glide instead of jumping.
+
+Three props control this: `length` sets how much scrolling covers the video,
+`easing` sets the curve, and `smoothScroll` with `smoothingTauMs` set how the
+motion feels.
+
+### `length`
+
+How much scrolling plays the whole video. Accepts `"400vh"`, `"2000px"` or a
+number of pixels. `vh` is the viewport height, so `"400vh"` is four screens of
+scrolling whatever the device. `length` never changes the video itself: in the options
+example below, the readout's **video** time stays the same while the
+**scroll** total grows or shrinks.
+
+The default, `"auto"`, gives 40vh per second of video, with at least one
+screen. Set it explicitly when content follows the video: with `"auto"`, the
+block only knows its height once the video's duration has loaded, so anything
+below it moves down at that point.
+
+### `easing`
+
+A preset name or your own function from 0–1 to 0–1. With `"none"`, scrolling
+moves through the video at a constant rate. Try the options here; the code
+underneath updates as you change them.
+
+<Example name="options" controls />
+
+Presets: `none`, `inQuad`, `outQuad`, `inOutQuad`, `inCubic`, `outCubic`,
+`inOutCubic`, `inOutSine`. A custom function must go from 0 to 1 and never go
+backwards; time-based section ranges and `scrollToTime` rely on that.
+
+<Callout title="Next.js server components">
+  Server components can't pass functions to client components. Use a preset
+  name such as `easing="inOutSine"` there, or wrap `ScrollVideo` in your own
+  client component to pass a function.
+</Callout>
+
+### Smoothing
+
+`smoothScroll` eases mouse-wheel scrolling for the whole page, which removes
+the steps a wheel makes. Touch and keyboard scrolling are left alone, and it
+turns itself off when the visitor prefers reduced motion.
+
+`smoothingTauMs` sets how closely the video follows the scroll: 100 ms by
+default, 35 ms when `smoothScroll` is on (the page scroll is already smooth).
+After fast scrolling the follow loosens briefly, so the video glides to a
+stop instead of jumping.
+
+## Loading and optimization
+
+Most exported videos have keyframes several seconds apart, which makes every
+jump to a new position slow. When `optimize` is on (the default), vidscroll
+downloads the file, checks its keyframes and, if they're too far apart,
+re-encodes it in the browser and caches the result. You can scroll the
+original while that runs; a small badge shows the progress.
+
+To skip that work, prepare the file ahead of time with
+`npx vidscroll encode hero.mp4`. Then it loads and scrubs smoothly right away.
+
+- `poster` shows an image while loading. By default the video's first frame
+  is used.
+- `loader` replaces the loading overlay: `false`, a React node, or a function
+  of the loading state.
+- `onLoad` reports how the video ended up being served (`"original"`,
+  `"optimized"`, `"cache"` or `"stream"`), and `onError` receives errors such
+  as a wrong path or a YouTube link.
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "src", type: "string", default: "required", description: "Video file URL. A file, not a page: YouTube and similar links are rejected." },
+    { name: "length", type: "string | number", default: '"auto"', description: '<code>"400vh"</code>, <code>"2000px"</code> or pixels. <code>"auto"</code> is 40vh per second of video.', href: "#length" },
+    { name: "easing", type: "EasingName | (t) => number", default: '"none"', description: "Curve from scroll progress to video time.", href: "#easing" },
+    { name: "smoothScroll", type: "boolean | SmoothScrollOptions", default: "false", description: "Eased mouse-wheel scrolling for the page. Options: <code>tau</code> (85), <code>wheelMultiplier</code> (1).", href: "#smoothing" },
+    { name: "smoothingTauMs", type: "number", default: "100", description: "How closely the video follows the scroll, in ms. 35 when <code>smoothScroll</code> is on.", href: "#smoothing" },
+    { name: "fit", type: '"cover" | "contain"', default: '"cover"', description: "<code>cover</code> fills the screen and crops; <code>contain</code> shows the whole frame." },
+    { name: "optimize", type: "boolean | OptimizeOptions", default: "true", description: "Re-encode slow-to-seek videos in the browser. Options: <code>maxKeyframeGap</code> (0.5 s), <code>maxResolution</code> (720), <code>maxFps</code> (30), <code>cache</code> (true), <code>wait</code> (false).", href: "#loading-and-optimization" },
+    { name: "fullPreload", type: "boolean", default: "true", description: "<code>false</code> streams the file directly and skips optimization." },
+    { name: "poster", type: "string | false", default: "first frame", description: "Image shown while loading, or <code>false</code> for none." },
+    { name: "loader", type: "ReactNode | false | (state, builtIn) => ReactNode", default: "built-in", description: "Replaces the loading overlay and the corner badge." },
+    { name: "onLoad", type: "({ source, probe }) => void", description: "Called once the final video is known." },
+    { name: "onError", type: "(error: Error) => void", description: "Called when the video can't be loaded or played." },
+    { name: "fps", type: "number", default: "30", description: "Frame rate for frame-based section ranges. Replaced by the measured rate when the browser can measure it." },
+    { name: "warmup", type: "boolean | number", default: "true", description: "Touch the whole timeline once while loading. <code>false</code> or a number of steps." },
+    { name: "debug", type: "boolean", default: "false", description: "Log engine internals to the console. <code>onDebug</code> receives them." },
+    { name: "className, style", type: "string, CSSProperties", description: "Applied to the outer block." },
+  ]}
+/>
+
+`easing` and `smoothingTauMs` apply immediately when they change. A new
+`length` or `fps` rebuilds the scroll mapping; a new `src`, `fullPreload` or
+`optimize` reloads the video. `warmup` and `debug` are read when the video
+starts.
+
+## Related
+
+- Section: ranges, active state and the `--progress` variable.
+- Hooks: read progress, time and active sections from your own components.
+- Preparing videos: why keyframes matter and how to pre-encode with the CLI.

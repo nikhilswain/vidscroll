@@ -1,21 +1,9 @@
 ---
 import Base from "../layouts/Base.astro";
-import { SetupCheck } from "../components/SetupCheck";
 import { withBase } from "../lib/url";
-
-const video = withBase("commute.mp4");
 ---
-<Base title="vidscroll site setup">
-  <main>
-    <p style="height: 60vh">Setup check: a React island, then the custom element.</p>
-    <SetupCheck client:load src={video} />
-    <p style="height: 40vh">Between</p>
-    <vid-scroll src={video} length="300vh" fit="contain">
-      <vid-scroll-section start="0" end="0.5"><h2 style="color: #fff">Custom element</h2></vid-scroll-section>
-    </vid-scroll>
-    <p style="height: 60vh">End</p>
+<Base title="vidscroll">
+  <main style="padding: 48px 24px; font-family: var(--sans)">
+    <p>The home page is coming. For now: <a href={withBase("docs/react/scroll-video")}>ScrollVideo docs</a>.</p>
   </main>
-  <script>
-    import "vidscroll/element";
-  </script>
 </Base>

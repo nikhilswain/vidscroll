@@ -1,0 +1,50 @@
+---
+import { withBase } from "../lib/url";
+const bundle = withBase("pagefind/");
+---
+<dialog class="search" data-search aria-label="Search the documentation">
+  <div class="search__box">
+    <div id="search" data-bundle={bundle}></div>
+    <p class="search__empty" hidden>Search is available on the built site.</p>
+  </div>
+</dialog>
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-search]")!;
+  const mount = document.getElementById("search")!;
+  let loaded: Promise<void> | null = null;
+  const load = () =>
+    (loaded ??= new Promise<void>((resolve) => {
+      const base = mount.dataset.bundle!;
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = `${base}pagefind-ui.css`;
+      document.head.append(css);
+      const script = document.createElement("script");
+      script.src = `${base}pagefind-ui.js`;
+      script.onload = () => {
+        const PagefindUI = (window as unknown as { PagefindUI: new (o: object) => unknown }).PagefindUI;
+        new PagefindUI({ element: "#search", showSubResults: true, showImages: false, resetStyles: false });
+        resolve();
+      };
+      script.onerror = () => {
+        dialog.querySelector<HTMLElement>(".search__empty")!.hidden = false;
+        resolve();
+      };
+      document.head.append(script);
+    }));
+  const open = async () => {
+    dialog.showModal();
+    await load();
+    dialog.querySelector<HTMLInputElement>("input")?.focus();
+  };
+  document.querySelectorAll("[data-search-open]").forEach((b) => b.addEventListener("click", open));
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      if (!dialog.open) open();
+    }
+  });
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+</script>

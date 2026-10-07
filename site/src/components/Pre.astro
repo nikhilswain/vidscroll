@@ -1,0 +1,15 @@
+---
+import CopyButton from "./CopyButton.astro";
+
+const { "data-language": language, "data-title": title, ...rest } = Astro.props as Record<string, string>;
+const LABELS: Record<string, string> = { tsx: "TSX", ts: "TypeScript", jsx: "JSX", js: "JavaScript", html: "HTML", css: "CSS", bash: "Terminal", sh: "Terminal", json: "JSON" };
+const terminal = language === "bash" || language === "sh";
+const label = title ?? LABELS[language] ?? language ?? "";
+---
+<div class:list={["code", { "code--terminal": terminal }]} data-code>
+  <div class="code__head">
+    <span class="code__file">{label}</span>
+    <CopyButton />
+  </div>
+  <pre {...rest}><slot /></pre>
+</div>
