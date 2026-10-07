@@ -1,0 +1,38 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Check your video
+description: Drop in a video to see whether it scrubs smoothly, how it seeks on your device, and how to prepare it.
+slug: videos/checker
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import { VideoChecker } from "../../../components/checker/VideoChecker";
+
+export const components = { pre: Pre, a: Link };
+
+<VideoChecker client:load />
+
+## What it checks
+
+- **Keyframes.** It reads the position of every keyframe from the file, the
+  same way vidscroll does when it loads a video, and draws them on the strip.
+  vidscroll uses a file as it is when keyframes are at most 0.5 s apart, and
+  re-encodes it otherwise. See [Why seeking stutters](/docs/videos/why-seeking-stutters/).
+- **Seeking on this device.** It jumps to 20 points in the video and times
+  each jump. The median tells you how many new frames scrolling can show per
+  second. Try it on a phone too: phones seek more slowly than laptops.
+- **Playback.** Whether this browser can play the file at all.
+- **The details** that matter for scrubbing: codec, resolution, frame rate,
+  duration, size and audio.
+
+The file stays on your device. It's read by JavaScript in this page and never
+uploaded.
+
+## Next steps
+
+If the checker suggests preparing the file, the command it shows is ready to
+run in your project folder. [Pre-encoding with the CLI](/docs/videos/cli/)
+explains the options. To scrub a file as it is, vidscroll's
+[automatic optimization](/docs/videos/automatic-optimization/) re-encodes it in
+each visitor's browser instead.
