@@ -1,0 +1,79 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: CLI
+description: The vidscroll encode command, every option and exactly what it runs.
+slug: reference/cli
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+For a walkthrough, see [Pre-encoding with the CLI](/docs/videos/cli/). This page
+is the reference.
+
+## Usage
+
+```bash
+npx vidscroll encode <input> [output] [options]
+npx vidscroll help
+```
+
+## Arguments and options
+
+<Table>
+  <thead>
+    <tr><th>Argument</th><th>Default</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>&lt;input&gt;</code></td><td>required</td><td>The video to prepare. Any format ffmpeg reads.</td></tr>
+    <tr><td><code>[output]</code></td><td>input name with <code>.scroll.mp4</code></td><td>Where to write the result. Must differ from the input. An existing file is overwritten.</td></tr>
+    <tr><td><code>--resolution &lt;px&gt;</code></td><td><code>720</code></td><td>Short side of the output. Never enlarges.</td></tr>
+    <tr><td><code>--gop &lt;frames&gt;</code></td><td><code>10</code></td><td>Frames between keyframes. Rounded to a whole number.</td></tr>
+    <tr><td><code>--crf &lt;n&gt;</code></td><td><code>22</code></td><td>Quality, lower is better and bigger.</td></tr>
+    <tr><td><code>--fps &lt;n&gt;</code></td><td>source rate</td><td>Frame rate cap. Faster sources are reduced; slower ones keep their rate.</td></tr>
+    <tr><td><code>-h</code>, <code>--help</code></td><td></td><td>Show the help text.</td></tr>
+  </tbody>
+</Table>
+
+All values must be positive numbers, written after a space (`--crf 24`, not
+`--crf=24`). Unknown options are ignored.
+
+## What it runs
+
+The command calls ffmpeg with these settings:
+
+<Table>
+  <thead>
+    <tr><th>Setting</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Video codec</td><td>H.264 (<code>libx264</code>), preset <code>slow</code>, <code>yuv420p</code></td></tr>
+    <tr><td>Keyframes</td><td>Exactly every <code>--gop</code> frames, scene-cut keyframes off</td></tr>
+    <tr><td>Quality</td><td><code>--crf</code></td></tr>
+    <tr><td>Size</td><td>Short side scaled to <code>--resolution</code> or less</td></tr>
+    <tr><td>Frame rate</td><td>Capped at <code>--fps</code> when given</td></tr>
+    <tr><td>Audio</td><td>Removed</td></tr>
+    <tr><td>Streaming</td><td>Metadata at the start of the file (<code>+faststart</code>)</td></tr>
+  </tbody>
+</Table>
+
+When it finishes, it prints the output path, its size, the input's size and the
+keyframe interval.
+
+## Finding ffmpeg
+
+The first one that exists is used:
+
+1. the `FFMPEG_PATH` environment variable,
+2. the `ffmpeg-static` package, if installed,
+3. `ffmpeg` on your `PATH`.
+
+If none is found, the command stops with instructions.
+
+## Related
+
+- [Pre-encoding with the CLI](/docs/videos/cli/): choosing settings, sizes and build steps.
+- [Why seeking stutters](/docs/videos/why-seeking-stutters/): what the keyframe settings change.

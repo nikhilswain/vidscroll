@@ -1,0 +1,88 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Browser support
+description: What vidscroll needs from the browser, what changes without it, and what has been tested.
+slug: reference/browser-support
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Scroll-driven video itself works in every current browser. What varies is
+whether a slow-to-scrub video can be fixed on the spot.
+
+## What each feature needs
+
+<Table>
+  <thead>
+    <tr><th>Feature</th><th>Needs</th><th>Without it</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Scrubbing, pinning, sections</td><td>The <code>video</code> element and CSS <code>position: sticky</code></td><td>Available in all current browsers</td></tr>
+    <tr><td>In-browser re-encoding</td><td>WebCodecs (<code>VideoDecoder</code> and <code>VideoEncoder</code>)</td><td>The original file is used; scrubbing is as smooth as the file allows</td></tr>
+    <tr><td>Caching the re-encoded copy</td><td>Cache Storage</td><td>The re-encode runs on every visit</td></tr>
+    <tr><td>Re-encoding and caching</td><td>A secure page: HTTPS or <code>localhost</code></td><td>Both are off, so plain-HTTP pages behave like browsers without WebCodecs</td></tr>
+  </tbody>
+</Table>
+
+A video prepared with `npx vidscroll encode` needs none of the optional
+features, which is why preparing files is the most reliable setup.
+
+## WebCodecs support
+
+<Table>
+  <thead>
+    <tr><th>Browser</th><th>WebCodecs</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Chrome, Edge</td><td>Version 94 and later</td></tr>
+    <tr><td>Firefox (desktop)</td><td>Version 130 and later</td></tr>
+    <tr><td>Firefox for Android</td><td>Not available</td></tr>
+    <tr><td>Samsung Internet</td><td>Version 17 and later</td></tr>
+    <tr><td>Safari (macOS and iOS)</td><td>Partial from 16.4, full from 26</td></tr>
+  </tbody>
+</Table>
+
+Source: [caniuse.com/webcodecs](https://caniuse.com/webcodecs), October 2026.
+
+## What has been tested
+
+<Table>
+  <thead>
+    <tr><th>Environment</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Chrome on Windows</td><td>Tested, including automated tests</td></tr>
+    <tr><td>Firefox on Windows</td><td>Tested, including automated tests</td></tr>
+    <tr><td>WebKit (Playwright's Windows build)</td><td>Tested; it has no WebCodecs, so raw videos aren't re-encoded</td></tr>
+    <tr><td>Android phone (Chromium-based browser)</td><td>Tested by hand</td></tr>
+    <tr><td>Next.js 16 with React 19</td><td>Tested: server rendering, hydration, server components</td></tr>
+    <tr><td>Safari on macOS, iPhone and iPad</td><td>Not yet tested</td></tr>
+  </tbody>
+</Table>
+
+<Callout kind="warning" title="Safari and iOS">
+  vidscroll hasn't been tested on real Safari or iOS devices yet. Prepared
+  videos use only standard video playback and are expected to work; the
+  in-browser re-encode depends on Safari's WebCodecs support. If you test it,
+  please report what you find on GitHub.
+</Callout>
+
+## Other details
+
+- **Firefox** may refuse to re-encode more than one video at the same time on
+  a page; the others keep their originals.
+- **Android browsers** use forward playback when scrolling forward, which is
+  smoother there than seeking.
+- **Low Power Mode** and similar settings that block video playback make
+  vidscroll fall back to seeking for every frame.
+- **Older browsers** without `svh` units use `vh` for the stage height.
+
+## Related
+
+- [Automatic optimization](/docs/videos/automatic-optimization/): what WebCodecs is used for.
+- [Measuring on real devices](/docs/guides/measuring/): checking a specific device.

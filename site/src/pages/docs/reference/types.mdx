@@ -1,0 +1,88 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: TypeScript types
+description: Everything each entry point exports, values and types.
+slug: reference/types
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+vidscroll is written in TypeScript and ships its types; there's nothing extra
+to install. It has three entry points, and each exports only what it needs.
+
+## `vidscroll` (React)
+
+<Table>
+  <thead>
+    <tr><th>Export</th><th>Kind</th><th>What it is</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ScrollVideo</code>, <code>Section</code>, <code>ScrollFrames</code></td><td>components</td><td>The React components</td></tr>
+    <tr><td><code>useScrollVideo</code>, <code>useScrollVideoState</code>, <code>useScrollVideoUpdate</code></td><td>hooks</td><td>See <Link href="/docs/react/hooks/">Hooks</Link></td></tr>
+    <tr><td><code>easing</code></td><td>value</td><td>The preset curves as functions, such as <code>easing.inOutSine</code></td></tr>
+    <tr><td><code>VidscrollError</code></td><td>class</td><td>Errors with a <code>code</code>; use with <code>instanceof</code></td></tr>
+    <tr><td><code>ScrollVideoProps</code>, <code>SectionProps</code>, <code>ScrollFramesProps</code></td><td>types</td><td>Component props</td></tr>
+    <tr><td><code>ScrollVideoApi</code></td><td>type</td><td>The <code>api</code> from <code>useScrollVideo</code></td></tr>
+    <tr><td><code>ScrollVideoState</code></td><td>type</td><td>What <code>useScrollVideoState</code> returns</td></tr>
+    <tr><td><code>ScrollVideoSnapshot</code></td><td>type</td><td>The state passed to <code>useScrollVideoUpdate</code> and events</td></tr>
+    <tr><td><code>ScrollVideoEvents</code></td><td>type</td><td>Event names and their payloads</td></tr>
+    <tr><td><code>LoaderState</code></td><td>type</td><td>The argument of a <code>loader</code> function</td></tr>
+    <tr><td><code>EasingName</code></td><td>type</td><td>The preset names accepted by <code>easing</code></td></tr>
+    <tr><td><code>VidscrollErrorCode</code></td><td>type</td><td><code>"unsupported-url" | "http-error" | "not-a-video" | "unplayable"</code></td></tr>
+    <tr><td><code>OptimizeOptions</code>, <code>SmoothScrollOptions</code>, <code>ScrollToOptions</code></td><td>types</td><td>Option objects</td></tr>
+    <tr><td><code>SectionRange</code></td><td>type</td><td>A range for <code>addSection</code></td></tr>
+    <tr><td><code>LoadedVideo</code>, <code>VideoProbe</code></td><td>types</td><td>What <code>onLoad</code> describes: the source and the file's measurements</td></tr>
+  </tbody>
+</Table>
+
+## `vidscroll/core`
+
+<Table>
+  <thead>
+    <tr><th>Export</th><th>Kind</th><th>What it is</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>createScrollVideo</code></td><td>function</td><td>Creates a controller. See <Link href="/docs/without-react/core/">vidscroll/core</Link></td></tr>
+    <tr><td><code>styles</code></td><td>value</td><td>The default CSS as a string</td></tr>
+    <tr><td><code>easing</code>, <code>VidscrollError</code></td><td>value, class</td><td>As in the React entry</td></tr>
+    <tr><td><code>ScrollVideoController</code></td><td>type</td><td>The controller</td></tr>
+    <tr><td><code>ScrollVideoOptions</code></td><td>type</td><td>Options for <code>createScrollVideo</code>, <code>update</code> and <code>setOptions</code></td></tr>
+    <tr><td><code>ScrollVideoEventMap</code>, <code>ScrollVideoEvent</code></td><td>types</td><td>Event payloads (including <code>loader</code>) and event names</td></tr>
+    <tr><td><code>LoaderState</code>, <code>EasingName</code>, <code>VidscrollErrorCode</code>, <code>ScrollVideoSnapshot</code>, <code>ScrollToOptions</code>, <code>SectionRange</code>, <code>OptimizeOptions</code>, <code>SmoothScrollOptions</code>, <code>LoadedVideo</code>, <code>VideoProbe</code></td><td>types</td><td>As in the React entry</td></tr>
+  </tbody>
+</Table>
+
+## `vidscroll/element`
+
+Importing this entry registers `<vid-scroll>` and `<vid-scroll-section>`, and
+adds them to `HTMLElementTagNameMap`, so `document.querySelector("vid-scroll")`
+is typed.
+
+<Table>
+  <thead>
+    <tr><th>Export</th><th>Kind</th><th>What it is</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>VidScrollElement</code>, <code>VidScrollSectionElement</code></td><td>classes</td><td>The element classes</td></tr>
+    <tr><td><code>VidScrollEventMap</code></td><td>type</td><td>The DOM events and their <code>detail</code> types</td></tr>
+    <tr><td><code>LoaderState</code>, <code>ScrollVideoController</code>, <code>ScrollVideoOptions</code></td><td>types</td><td>As in the core entry</td></tr>
+  </tbody>
+</Table>
+
+## Two naming details
+
+- The React entry calls the event map `ScrollVideoEvents`; the core entry calls
+  it `ScrollVideoEventMap` and includes the `loader` event, which the React
+  `api` doesn't list.
+- `onLoad` receives `{ source, probe }`. `source` is `"original"`,
+  `"optimized"`, `"cache"` or `"stream"`. `probe` describes the file
+  (`duration`, `width`, `height`, `frameCount`, `maxKeyframeGap`) and is
+  `null` for cached and streamed videos.
+
+## Related
+
+- [Controller API and events](/docs/reference/api/): methods and payloads in detail.

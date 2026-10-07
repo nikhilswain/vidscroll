@@ -1,0 +1,148 @@
+---
+layout: ../../layouts/DocsLayout.astro
+title: Troubleshooting
+description: Common problems, how to recognise their cause, and how to fix them.
+slug: troubleshooting
+---
+
+import Pre from "../../components/Pre.astro";
+import Link from "../../components/Link.astro";
+import Table from "../../components/Table.astro";
+import Callout from "../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+Start with the browser console: vidscroll logs a clear message for almost
+every problem below, starting with `[vidscroll]`.
+
+## The video scrolls away instead of pinning
+
+**Cause:** an element around the video has `overflow: hidden`, `auto` or
+`scroll`, which stops `position: sticky` from working.
+
+**Check:** in the browser's inspector, walk up from the `[data-vidscroll]`
+element and look for an `overflow` setting. Layout wrappers and page
+transition components often add one.
+
+**Fix:** remove it, or change it to `overflow: clip`, which hides overflow
+without breaking sticky.
+
+## Scrubbing is slow or choppy
+
+**Cause:** almost always keyframes far apart in the file. The console says
+"isn't encoded for scrubbing" or "will scrub slowly".
+
+**Check:** look for those messages. If you see "re-encoding it in the
+browser", scrubbing gets smoother once the corner badge disappears.
+
+**Fix:** prepare the file with `npx vidscroll encode`. If the file is already
+prepared and it's still choppy on a phone, the effects on top may be the
+problem: avoid animated `filter: blur()` and large shadows.
+See [Why seeking stutters](/docs/videos/why-seeking-stutters/).
+
+## The video never loads
+
+**Cause:** usually a wrong path or a server problem.
+
+**Check:** the loading overlay shows the error, and so does the console:
+
+<Table>
+  <thead>
+    <tr><th>Message mentions</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>HTTP 404 (or another status)</td><td>The file isn't at that URL</td></tr>
+    <tr><td>returned an HTML page</td><td>The path is wrong and the host served a web page instead</td></tr>
+    <tr><td>a YouTube, Vimeo or other page</td><td><code>src</code> is a video page, not a file</td></tr>
+    <tr><td>can't scrub</td><td>The browser can't play this file; prepare it with the CLI</td></tr>
+  </tbody>
+</Table>
+
+**Fix:** use a direct link to the video file. Files in `public/` are served
+from the site root: `public/videos/hero.mp4` is `/videos/hero.mp4`.
+
+## It works locally but not on my phone
+
+**Cause:** testing your dev server over the local network uses plain HTTP, and
+browsers turn off in-browser re-encoding and caching on insecure pages.
+Firefox for Android has no re-encoding at all.
+
+**Fix:** test on an HTTPS deployment, and prepare videos with the CLI so they
+don't depend on re-encoding. See [Measuring on real devices](/docs/guides/measuring/).
+
+## The video re-encodes on every visit
+
+**Cause:** the optimized copy isn't being cached.
+
+**Check:** the server must send an `ETag`, `Last-Modified` or `Content-Length`
+header (`curl -sI <url>` shows them), the page must be HTTPS or `localhost`,
+and `optimize` must not set `cache: false`.
+
+**Fix:** prepare the file with the CLI, so there's nothing to re-encode.
+
+## A video from another site scrubs slowly
+
+**Cause:** the server doesn't allow your site to read the file (CORS), so
+vidscroll streams it without checking or optimizing it. The console says
+"Couldn't read … (network error or CORS)".
+
+**Fix:** allow your origin in the server's CORS settings, or upload a file
+prepared with the CLI. See [Videos from other domains](/docs/guides/other-domains/).
+
+## Content below the video jumps
+
+**Cause:** `length` is `"auto"`, so the block's height depends on the video's
+duration, which is only known once it loads.
+
+**Fix:** set `length` explicitly, such as `length="400vh"`.
+
+## Sections appear at the wrong time, or never
+
+<Table>
+  <thead>
+    <tr><th>Situation</th><th>Cause</th><th>Fix</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>A time-based section shows up late</td><td>Time ranges wait until the duration is known</td><td>Expected; it appears as soon as the video's metadata loads</td></tr>
+    <tr><td>Sections never activate in Astro</td><td>Sections written in an <code>.astro</code> file are static HTML</td><td>Put <code>ScrollVideo</code> and its sections in one React component (<Link href="/docs/get-started/astro/">Astro</Link>)</td></tr>
+    <tr><td>Time ranges do nothing in <code>ScrollFrames</code></td><td>Image sequences have no duration</td><td>Use <code>start</code>/<code>end</code> or frame numbers</td></tr>
+    <tr><td>A section shifts when you change <code>easing</code></td><td>It uses <code>start</code>/<code>end</code>, which are scroll positions</td><td>Use <code>fromTime</code>/<code>toTime</code> to tie it to the footage</td></tr>
+    <tr><td>"Section id already exists"</td><td>Two sections share an <code>id</code></td><td>Make ids unique within the video</td></tr>
+  </tbody>
+</Table>
+
+## Buttons over the video don't respond
+
+**Cause:** the layer over the video ignores clicks so you can scroll through
+it.
+
+**Fix:** give interactive elements `pointer-events: auto`. Inside a section,
+the section's content already takes clicks while it's active.
+
+## Hooks return null or never update
+
+**Cause:** the component isn't inside a `ScrollVideo` (or `ScrollFrames`).
+Outside one, `useScrollVideo` returns `{ api: null }` and the others stay idle.
+
+**Fix:** render the component as a child of the `ScrollVideo`.
+
+## Next.js: "Functions cannot be passed directly to Client Components"
+
+**Cause:** a function prop, such as a custom `easing`, `onLoad` or `loader`,
+passed from a server component.
+
+**Fix:** use a preset easing name, or move the scroll video into your own
+component that starts with `"use client"`. See [Next.js](/docs/get-started/nextjs/).
+
+## Several raw videos on one page in Firefox
+
+**Cause:** Firefox may refuse to run more than one video encoder at a time, so
+only one video gets re-encoded; the console says "Re-encoding … failed".
+
+**Fix:** prepare the videos with the CLI.
+
+<Callout title="Still stuck?">
+  Open an issue on [GitHub](https://github.com/nikhilswain/vidscroll/issues)
+  with the console messages, the browser and device, and the video's URL if
+  you can share it.
+</Callout>

@@ -1,0 +1,87 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Errors and warnings
+description: Every error code and console warning, what triggers it, and what to do.
+slug: reference/errors
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+vidscroll separates the two clearly. **Errors** stop the video from working;
+they're passed to `onError` (or the element's `vidscroll-error` event), logged,
+and shown in the loading overlay. **Warnings** mean the video works but could
+work better; each is logged to the console once per page.
+
+## Errors
+
+Errors that come from the video itself are `VidscrollError` instances with a
+`code`:
+
+```tsx title="Hero.tsx"
+import { ScrollVideo, VidscrollError } from "vidscroll";
+
+<ScrollVideo
+  src="/videos/hero.mp4"
+  onError={(error) => {
+    if (error instanceof VidscrollError && error.code === "http-error") showFallbackImage();
+  }}
+/>;
+```
+
+<Table>
+  <thead>
+    <tr><th>Code</th><th>When</th><th>What to do</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>unsupported-url</code></td><td><code>src</code> is a YouTube, Vimeo, TikTok, Instagram, Facebook, X, Dailymotion or Twitch page, or an HLS/DASH stream (<code>.m3u8</code>, <code>.mpd</code>)</td><td>Use a direct link to a video file</td></tr>
+    <tr><td><code>http-error</code></td><td>The server answered with an error status, such as 404</td><td>Check the path and that the file is deployed</td></tr>
+    <tr><td><code>not-a-video</code></td><td>The server answered with an HTML page, usually because the file doesn't exist and the host serves <code>index.html</code> instead</td><td>Check the path</td></tr>
+    <tr><td><code>unplayable</code></td><td>The browser can't play or seek the file, after trying the optimized copy, the downloaded original and streaming</td><td>Prepare the file with <code>npx vidscroll encode</code>, which makes a standard MP4</td></tr>
+  </tbody>
+</Table>
+
+Two plain `Error`s can also occur, both from incorrect setup:
+
+<Table>
+  <thead>
+    <tr><th>Message</th><th>Cause</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>Invalid length "…"</code></td><td><code>length</code> isn't a number, <code>"auto"</code>, or a value in <code>px</code>, <code>vh</code>, <code>svh</code>, <code>lvh</code> or <code>dvh</code>. Passed to <code>onError</code>.</td></tr>
+    <tr><td><code>Section id already exists: …</code></td><td>Two sections in one video share an <code>id</code>. Thrown when the second is added.</td></tr>
+  </tbody>
+</Table>
+
+## Warnings
+
+Messages start with `[vidscroll]` and name the video's URL.
+
+<Table>
+  <thead>
+    <tr><th>Message begins</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>… isn't encoded for scrubbing (keyframes are up to Xs apart); re-encoding it in the browser.</code></td><td>The file has sparse keyframes and is being fixed in the browser. Prepare it with the CLI to skip this.</td></tr>
+    <tr><td><code>… will scrub slowly: …, and this browser can't re-encode it (no WebCodecs).</code></td><td>Sparse keyframes in a browser without WebCodecs. Prepare the file.</td></tr>
+    <tr><td><code>… will scrub slowly: …</code></td><td>Sparse keyframes with <code>optimize={"{false}"}</code>. Prepare the file or turn optimization back on.</td></tr>
+    <tr><td><code>Re-encoding … failed (…); using the original.</code></td><td>The in-browser encoder failed. The original stays on screen.</td></tr>
+    <tr><td><code>Couldn't read … (network error or CORS). Streaming it directly instead</code></td><td>The file couldn't be downloaded, usually missing CORS on another domain. See <Link href="/docs/guides/other-domains/">Videos from other domains</Link>.</td></tr>
+    <tr><td><code>… is NMB. Every visitor downloads the whole file before scrolling.</code></td><td>The file is over 100 MB. Use a shorter or smaller video.</td></tr>
+    <tr><td><code>… is Ns long. Scroll-scrubbed videos work best under ~120s</code></td><td>The video is over two minutes. Long scroll videos mean very long pages and slow first loads.</td></tr>
+    <tr><td><code>Couldn't switch to the optimized copy of … ; keeping the original.</code></td><td>The re-encoded copy couldn't take over. The original stays.</td></tr>
+    <tr><td><code>This browser couldn't use the downloaded copy of …; streaming it instead.</code></td><td>The downloaded file couldn't be played, so the URL is streamed.</td></tr>
+    <tr><td><code>Unknown easing "…".</code></td><td>The easing name isn't a preset. The video uses <code>none</code>.</td></tr>
+  </tbody>
+</Table>
+
+When keyframes can't be read at all, "keyframes are up to Xs apart" reads "its
+keyframe layout couldn't be read" instead.
+
+## Related
+
+- [Troubleshooting](/docs/troubleshooting/): symptoms and fixes.
+- [Automatic optimization](/docs/videos/automatic-optimization/): what the re-encode warnings refer to.

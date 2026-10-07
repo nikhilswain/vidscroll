@@ -1,0 +1,146 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Controller API and events
+description: Every method, event and state field of the scroll video API, for React, the element and the core.
+slug: reference/api
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+The same API is reachable three ways:
+
+<Table>
+  <thead>
+    <tr><th>Where</th><th>How</th><th>Available</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>React</td><td><code>useScrollVideo().api</code></td><td>The methods under <a href="#methods">Methods</a></td></tr>
+    <tr><td><code>&lt;vid-scroll&gt;</code></td><td><code>element.api</code></td><td>Methods plus <a href="#core-only">core-only</a></td></tr>
+    <tr><td><code>vidscroll/core</code></td><td>the return value of <code>createScrollVideo</code></td><td>Methods plus <a href="#core-only">core-only</a></td></tr>
+  </tbody>
+</Table>
+
+The api is `null` until the component has mounted (React) or the element has
+started. Until the video is ready, methods are safe to call and do nothing,
+and `getState` returns zeros.
+
+## Methods
+
+### `on(event, handler)` / `off(event, handler)`
+
+Subscribe to and unsubscribe from [events](#events). Listeners stay attached
+for the life of the component, including when the video reloads.
+
+### `getState()`
+
+Returns the [state](#state) right now.
+
+### `isReady()`
+
+`true` once the video is loaded and following the scroll.
+
+### `scrollToTime(seconds, options?)`
+
+Scrolls the page to the position where the video shows `seconds`. `options`
+is `{ behavior?: "smooth" | "instant" | "auto" }`, smooth by default. Does
+nothing until the video's duration is known, and nothing in `ScrollFrames`.
+
+### `scrollToProgress(progress, options?)`
+
+Scrolls the page to a progress between 0 and 1 (clamped). Same `options`.
+
+### `getSectionProgress(id)`
+
+The section's progress from 0 to 1, the same value as its `--progress`
+variable. `0` for unknown ids.
+
+### `addSection(range)` / `removeSection(id)`
+
+Adds or removes a tracked range. `range` is
+`{ id, start?, end?, fromTime?, toTime?, fromFrame?, toFrame? }`. Adding an id
+that already exists throws. React's `<Section>` and `<vid-scroll-section>` call
+these for you.
+
+## Core only
+
+Available on `element.api` and on the controller from `createScrollVideo`.
+
+<Table>
+  <thead>
+    <tr><th>Method</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>update(options)</code></td><td>Changes the options you pass; the others keep their values.</td></tr>
+    <tr><td><code>setOptions(options)</code></td><td>Replaces all options; omitted ones return to their defaults.</td></tr>
+    <tr><td><code>getLoader()</code></td><td>The current <a href="#loader-state">loader state</a>, or <code>null</code>.</td></tr>
+    <tr><td><code>destroy()</code></td><td>Stops everything, removes the video and all listeners.</td></tr>
+  </tbody>
+</Table>
+
+## State
+
+Returned by `getState()` and passed to `update`, `ready` and `resize` handlers.
+
+<Table>
+  <thead>
+    <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>linearProgress</code></td><td><code>number</code></td><td>Smoothed scroll progress through the block, 0 to 1</td></tr>
+    <tr><td><code>time</code></td><td><code>number</code></td><td>Video time in seconds (frame ÷ <code>fps</code> in <code>ScrollFrames</code>)</td></tr>
+    <tr><td><code>frameIndex</code></td><td><code>number</code></td><td>Current frame</td></tr>
+    <tr><td><code>totalFrames</code></td><td><code>number</code></td><td>Frame count</td></tr>
+    <tr><td><code>duration</code></td><td><code>number</code></td><td>Video length in seconds (0 in <code>ScrollFrames</code>)</td></tr>
+    <tr><td><code>activeSections</code></td><td><code>string[]</code></td><td>Ids of the active sections</td></tr>
+  </tbody>
+</Table>
+
+`useScrollVideoState()` returns a simplified version:
+`{ ready, progress, time, frame, activeSections }`.
+
+## Events
+
+<Table>
+  <thead>
+    <tr><th>Event</th><th>Payload</th><th>Fires</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>update</code></td><td>state</td><td>Every frame while the video moves, and once when the scroll mapping is rebuilt</td></tr>
+    <tr><td><code>ready</code></td><td>state</td><td>The video is ready; again after the scroll mapping is rebuilt</td></tr>
+    <tr><td><code>sectionEnter</code></td><td><code>{"{ id, state }"}</code></td><td>A section becomes active</td></tr>
+    <tr><td><code>sectionExit</code></td><td><code>{"{ id, state }"}</code></td><td>A section becomes inactive</td></tr>
+    <tr><td><code>warmup</code></td><td><code>{"{ value }"}</code></td><td>Progress of the pass over the timeline while loading, 0 to 1</td></tr>
+    <tr><td><code>resize</code></td><td>state</td><td>The window is resized</td></tr>
+    <tr><td><code>loader</code></td><td>loader state or <code>null</code></td><td>The loading state changes (core and element only)</td></tr>
+  </tbody>
+</Table>
+
+The scroll mapping is rebuilt when `length`, `fps` or smooth scrolling on/off
+changes, or when the video falls back to another copy. Active sections get a
+`sectionExit` first, then `sectionEnter` again from the new mapping.
+
+The element also fires DOM events: see
+[`<vid-scroll>` events](/docs/without-react/element/#events).
+
+## Loader state
+
+<Table>
+  <thead>
+    <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>phase</code></td><td><code>"download" | "optimize" | "preparing" | "error"</code></td><td>What's happening</td></tr>
+    <tr><td><code>progress</code></td><td><code>number</code></td><td>0 to 1 within the phase</td></tr>
+    <tr><td><code>background</code></td><td><code>boolean</code></td><td><code>true</code> while the original is already scrollable during a re-encode</td></tr>
+    <tr><td><code>error</code></td><td><code>Error</code></td><td>Only in the <code>error</code> phase</td></tr>
+  </tbody>
+</Table>
+
+## Related
+
+- [Hooks](/docs/react/hooks/): using the api from React.
+- [vidscroll/core](/docs/without-react/core/): creating a controller.

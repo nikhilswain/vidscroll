@@ -67,17 +67,20 @@ export const NAV: NavGroup[] = [
   {
     title: "Reference",
     items: [
-      { title: "Controller API and events" },
-      { title: "Styling hooks" },
-      { title: "Errors and warnings" },
-      { title: "TypeScript types" },
-      { title: "CLI" },
-      { title: "Browser support" },
+      { title: "Controller API and events", slug: "reference/api" },
+      { title: "Styling hooks", slug: "reference/styling" },
+      { title: "Errors and warnings", slug: "reference/errors" },
+      { title: "TypeScript types", slug: "reference/types" },
+      { title: "CLI", slug: "reference/cli" },
+      { title: "Browser support", slug: "reference/browser-support" },
     ],
   },
   {
     title: "More",
-    items: [{ title: "Troubleshooting" }, { title: "Changelog" }],
+    items: [
+      { title: "Troubleshooting", slug: "troubleshooting" },
+      { title: "Changelog", slug: "changelog" },
+    ],
   },
 ];
 

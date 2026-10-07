@@ -1,0 +1,99 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Styling hooks
+description: CSS variables, data attributes, shadow parts and the default styles.
+slug: reference/styling
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+vidscroll ships no stylesheet to import. It adds a few default rules, all
+wrapped in `:where()` so they have zero specificity: any rule you write wins,
+without `!important`.
+
+## CSS variables
+
+<Table>
+  <thead>
+    <tr><th>Variable</th><th>Set on</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>--video-progress</code></td><td>The <code>ScrollVideo</code> or <code>ScrollFrames</code> block, the <code>&lt;vid-scroll&gt;</code> element, the core container</td><td>Smoothed progress through the whole video, 0 to 1, four decimals. Set once the video starts.</td></tr>
+    <tr><td><code>--progress</code></td><td>Each section</td><td>Progress through the section's range: 0 before, 1 after.</td></tr>
+    <tr><td><code>--loader-progress</code></td><td>The <code>&lt;vid-scroll&gt;</code> element</td><td>Loading progress, 0 to 1, while loading. Removed when done.</td></tr>
+  </tbody>
+</Table>
+
+All three are inherited by everything inside.
+
+## Data attributes
+
+<Table>
+  <thead>
+    <tr><th>Selector</th><th>Element</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>[data-vidscroll]</code></td><td>The outer block. Its height is <code>length</code> plus one screen.</td></tr>
+    <tr><td><code>[data-vidscroll-stage]</code></td><td>The pinned, screen-sized stage</td></tr>
+    <tr><td><code>[data-vidscroll-overlay]</code></td><td>The layer over the video that holds your content</td></tr>
+    <tr><td><code>[data-vidscroll-media]</code></td><td>The video, or the canvas in <code>ScrollFrames</code>. <code>[data-fit]</code> holds <code>cover</code> or <code>contain</code>.</td></tr>
+    <tr><td><code>[data-vidscroll-preview]</code></td><td>The first-frame video shown while loading</td></tr>
+    <tr><td><code>[data-vidscroll-next]</code></td><td>The optimized copy while it's being swapped in, behind the current video</td></tr>
+    <tr><td><code>[data-vidscroll-section="id"]</code></td><td>A section; <code>[data-active]</code> while active</td></tr>
+    <tr><td><code>[data-vidscroll-loader]</code></td><td>The loading overlay; <code>[data-phase]</code> holds the phase, <code>[data-background]</code> marks the corner badge</td></tr>
+  </tbody>
+</Table>
+
+In `<vid-scroll>`, the stage, media and loader are inside the element's shadow
+root, so style them with the parts below instead. The element itself carries
+`data-phase` and `data-background` while loading.
+
+## Shadow parts
+
+For `<vid-scroll>` only:
+
+<Table>
+  <thead>
+    <tr><th>Selector</th><th>Element</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>vid-scroll::part(stage)</code></td><td>The pinned stage</td></tr>
+    <tr><td><code>vid-scroll::part(video)</code></td><td>The video</td></tr>
+    <tr><td><code>vid-scroll::part(overlay)</code></td><td>The layer holding your content</td></tr>
+    <tr><td><code>vid-scroll::part(loader)</code></td><td>The loading overlay and corner badge</td></tr>
+  </tbody>
+</Table>
+
+## Default styles
+
+These are the rules vidscroll adds (the element applies the same ones inside its
+shadow root):
+
+```css title="vidscroll defaults"
+:where([data-vidscroll]) { position: relative; }
+:where([data-vidscroll-stage]) { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #000; }
+:where([data-vidscroll-media]) { display: block; width: 100%; height: 100%; object-fit: cover; }
+:where([data-vidscroll-media][data-fit="contain"]) { object-fit: contain; }
+:where([data-vidscroll-preview]) { position: absolute; inset: 0; }
+:where([data-vidscroll-next]) { position: absolute; inset: 0; z-index: -1; }
+:where([data-vidscroll-overlay]) { position: absolute; inset: 0; pointer-events: none; }
+:where([data-vidscroll-section]) { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0s linear 0.4s; }
+:where([data-vidscroll-section][data-active]) { opacity: 1; visibility: visible; transition: opacity 0.4s ease; }
+:where([data-vidscroll-section][data-active] > *) { pointer-events: auto; }
+:where([data-vidscroll-loader]) { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; background: rgb(0 0 0 / 0.55); color: #fff; font-family: system-ui, sans-serif; }
+:where([data-vidscroll-loader][data-background]) { inset: auto 16px 16px auto; padding: 8px 14px; border-radius: 999px; pointer-events: none; }
+```
+
+React renders them in a `<style>` element next to each component. The core
+and the element add them to the page's `<head>` once, as
+`<style data-vidscroll-styles>`, and they're exported as the `styles` string
+from `vidscroll/core`.
+
+## Related
+
+- [Scroll-driven CSS](/docs/guides/scroll-driven-css/): effects from the variables.
+- [Custom loaders](/docs/guides/loaders/): restyling the loading overlay.
