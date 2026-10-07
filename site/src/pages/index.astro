@@ -1,9 +1,74 @@
 ---
-import Base from "../layouts/Base.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import KeyframeStrip from "../components/KeyframeStrip.astro";
+import { Hero } from "../components/home/Hero";
+import { CreditLine } from "../../../demo/src/CreditLine";
+import { SINTEL_CREDIT, SPRING_CREDIT, TRAIN_CREDIT } from "../../../demo/src/credits";
+import { DEMO_META } from "../../../demo/src/demo-meta";
 import { withBase } from "../lib/url";
+import "../styles/home.css";
+
+const OLD_DEMOS = "https://vidscroll.ze-ro.workers.dev";
+const demoHref = (slug: string, href?: string) => (href ? `${OLD_DEMOS}${href}` : `${OLD_DEMOS}/#/${slug}`);
+const docs = withBase("docs/start/introduction/");
 ---
-<Base title="vidscroll">
-  <main style="padding: 48px 24px; font-family: var(--sans)">
-    <p>The home page is coming. For now: <a href={withBase("docs/start/introduction/")}>the documentation</a>.</p>
+<SiteLayout title="vidscroll: video that plays as you scroll" description="Scroll-scrubbed video for React and plain HTML. Smooth on any MP4 or WebM: videos with sparse keyframes are re-encoded in the browser automatically.">
+  <main id="content" class="home">
+    <Hero client:load src={withBase("commute.mp4")} docs={docs} demos="#demos" />
+
+    <section class="home-section why" aria-labelledby="why-heading">
+      <div class="home-section__intro">
+        <h2 id="why-heading">Why scrubbing video usually stutters</h2>
+        <p>
+          A video stores a full picture only every few seconds. To show any other frame, the browser rebuilds it
+          from the last full picture, and scrolling asks for a new frame dozens of times a second. vidscroll fixes
+          the file, in the browser or ahead of time, so every frame is close at hand.
+        </p>
+      </div>
+      <KeyframeStrip label="A typical exported video" every={4} note="A full picture every few seconds: slow to jump around in." />
+      <KeyframeStrip label="The same video after vidscroll" every={0.33} note="A full picture every third of a second: any frame is quick to show." />
+      <dl class="facts">
+        <div>
+          <dt>Any MP4 or WebM</dt>
+          <dd>Files that are slow to scrub are re-encoded in the visitor's browser and cached for the next visit.</dd>
+        </div>
+        <div>
+          <dt>Or prepare it once</dt>
+          <dd><code>npx vidscroll encode hero.mp4</code> before you deploy, and every visitor scrubs smoothly from the start.</dd>
+        </div>
+        <div>
+          <dt>React or plain HTML</dt>
+          <dd>Components and hooks for React and Next.js, and a <code>&lt;vid-scroll&gt;</code> element for everything else.</dd>
+        </div>
+      </dl>
+      <a class="home-link" href={withBase("docs/start/how-it-works/")}>How it works</a>
+    </section>
+
+    <section class="home-section" id="demos" aria-labelledby="demos-heading">
+      <div class="home-section__intro">
+        <h2 id="demos-heading">Demos</h2>
+        <p>Each one is built with the library and plain CSS. Open them on your phone too.</p>
+      </div>
+      <ul class="gallery">
+        {DEMO_META.map((demo) => (
+          <li>
+            <a class="demo-card" href={demoHref(demo.slug, demo.href)}>
+              <span class="demo-card__poster">
+                <img src={withBase(demo.poster)} alt="" loading="lazy" width="960" height="540" />
+              </span>
+              <span class="demo-card__title">{demo.title}</span>
+              <span class="demo-card__text">{demo.description}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <footer class="home-footer">
+      <p>Train animation: <CreditLine credit={TRAIN_CREDIT} /></p>
+      <p>Mountain clip: <CreditLine credit={SPRING_CREDIT} /></p>
+      <p>Snow clip: <CreditLine credit={SINTEL_CREDIT} /></p>
+      <p>MIT licensed. <a href="https://github.com/nikhilswain/vidscroll">Source on GitHub</a>.</p>
+    </footer>
   </main>
-</Base>
+</SiteLayout>

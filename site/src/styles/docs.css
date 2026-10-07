@@ -121,6 +121,13 @@
   display: none;
 }
 
+.header__docs {
+  display: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
 .docs {
   display: grid;
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--toc-w);
@@ -1057,6 +1064,15 @@ a.pager__item--next:hover .pager__arrow {
 
   .header__nav {
     display: none;
+  }
+
+  .header__docs {
+    display: block;
+    margin-left: auto;
+  }
+
+  .header__docs + .header__end {
+    margin-left: var(--space-2);
   }
 
   .header__search {
