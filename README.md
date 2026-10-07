@@ -165,7 +165,7 @@ with no video decoding:
 The `<vid-scroll>` element does the same on any page:
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll/dist/cdn/vidscroll-element.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/vidscroll@0.3/dist/cdn/vidscroll-element.js"></script>
 
 <vid-scroll src="/videos/hero.mp4" length="400vh" easing="inOutSine" smooth-scroll>
   <vid-scroll-section from-time="0" to-time="4">

@@ -11,6 +11,9 @@ interface Props {
   description?: string;
 }
 const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const image = new URL(withBase("og.jpg"), Astro.site).href;
+const analyticsToken = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN;
 ---
 <!doctype html>
 <html lang="en">
@@ -21,8 +24,23 @@ const { title, description } = Astro.props;
     {description && <meta name="description" content={description} />}
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href={withBase("sitemap.xml")} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="vidscroll" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="vidscroll: video that plays as you scroll" />
+    <meta name="twitter:card" content="summary_large_image" />
     {[serif500, sans400, sans600].map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
     <ClientRouter />
+    {analyticsToken && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: analyticsToken, spa: true })}></script>
+    )}
   </head>
   <body>
     <div class="nav-progress" data-nav-progress transition:persist="nav-progress" aria-hidden="true"></div>
