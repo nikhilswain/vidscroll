@@ -2,7 +2,7 @@
 import { withBase } from "../lib/url";
 const bundle = withBase("pagefind/");
 ---
-<dialog class="search" data-search aria-label="Search the documentation">
+<dialog class="search" data-search aria-label="Search the documentation" transition:persist="search">
   <div class="search__box">
     <div id="search" data-bundle={bundle}></div>
     <p class="search__empty" hidden>Search is available on the built site.</p>

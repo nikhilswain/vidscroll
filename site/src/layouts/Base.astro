@@ -1,6 +1,10 @@
 ---
+import { ClientRouter } from "astro:transitions";
 import "../styles/base.css";
 import { withBase } from "../lib/url";
+import serif500 from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-normal.woff2?url";
+import sans400 from "@fontsource/instrument-sans/files/instrument-sans-latin-400-normal.woff2?url";
+import sans600 from "@fontsource/instrument-sans/files/instrument-sans-latin-600-normal.woff2?url";
 
 interface Props {
   title: string;
@@ -17,8 +21,28 @@ const { title, description } = Astro.props;
     {description && <meta name="description" content={description} />}
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    {[serif500, sans400, sans600].map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
+    <ClientRouter />
   </head>
   <body>
+    <div class="nav-progress" data-nav-progress transition:persist="nav-progress" aria-hidden="true"></div>
     <slot />
+    <script>
+      const bar = () => document.querySelector<HTMLElement>("[data-nav-progress]");
+      let timer = 0;
+      document.addEventListener("astro:before-preparation", () => {
+        const el = bar();
+        if (!el) return;
+        clearTimeout(timer);
+        el.classList.remove("is-done");
+        el.classList.add("is-loading");
+      });
+      document.addEventListener("astro:after-swap", () => {
+        const el = bar();
+        if (!el) return;
+        el.classList.add("is-done");
+        timer = window.setTimeout(() => el.classList.remove("is-loading", "is-done"), 300);
+      });
+    </script>
   </body>
 </html>

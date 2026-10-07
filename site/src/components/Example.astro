@@ -109,7 +109,7 @@ const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segm
 
 <script>
   const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
-  const examples = [...document.querySelectorAll<HTMLElement>("[data-example]")];
+  const examples = () => [...document.querySelectorAll<HTMLElement>("[data-example]")];
 
   const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const attr = (name: string, value: string) =>
@@ -140,7 +140,7 @@ const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segm
     }).toString();
   };
 
-  for (const example of examples) {
+  const setup = (example: HTMLElement) => {
     const iframe = example.querySelector<HTMLIFrameElement>("iframe")!;
     const start = example.querySelector<HTMLButtonElement>("[data-start]")!;
     const full = example.querySelector<HTMLButtonElement>("[data-full]")!;
@@ -178,9 +178,6 @@ const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segm
       if (on) begin();
     };
     full.addEventListener("click", () => setFull(!example.classList.contains("is-full")));
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && example.classList.contains("is-full")) setFull(false);
-    });
 
     if (form && generatedCode) {
       generatedCode.innerHTML = generated(form);
@@ -189,11 +186,16 @@ const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segm
         if (iframe.getAttribute("src")) iframe.src = url();
       });
     }
-  }
+  };
+
+  document.addEventListener("astro:page-load", () => examples().forEach(setup));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") document.querySelector<HTMLButtonElement>(".example.is-full [data-full]")?.click();
+  });
 
   window.addEventListener("message", (event) => {
     if (event.origin !== location.origin || event.data?.type !== "vidscroll-example") return;
-    const example = examples.find((ex) => ex.querySelector("iframe")?.contentWindow === event.source);
+    const example = examples().find((ex) => ex.querySelector("iframe")?.contentWindow === event.source);
     if (!example) return;
     const { progress, time, duration, active, ready, screens, scrolled } = event.data as {
       progress: number;

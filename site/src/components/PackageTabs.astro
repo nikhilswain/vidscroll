@@ -38,16 +38,18 @@ const managers = [
       });
     });
   };
-  document.querySelectorAll<HTMLButtonElement>("[data-pm-tab]").forEach((tab) =>
-    tab.addEventListener("click", () => {
-      select(tab.dataset.pmTab!);
-      try {
-        localStorage.setItem(KEY, tab.dataset.pmTab!);
-      } catch {}
-    })
-  );
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (saved) select(saved);
-  } catch {}
+  document.addEventListener("click", (e) => {
+    const tab = (e.target as Element).closest<HTMLButtonElement>("[data-pm-tab]");
+    if (!tab) return;
+    select(tab.dataset.pmTab!);
+    try {
+      localStorage.setItem(KEY, tab.dataset.pmTab!);
+    } catch {}
+  });
+  document.addEventListener("astro:page-load", () => {
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved) select(saved);
+    } catch {}
+  });
 </script>

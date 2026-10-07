@@ -62,44 +62,69 @@ const { current, prev, next } = neighbours(frontmatter.slug);
   </div>
   <Search />
   <script>
-    const sidebar = document.getElementById("sidebar")!;
-    const backdrop = document.querySelector<HTMLElement>(".docs__backdrop")!;
-    const openButton = document.querySelector<HTMLButtonElement>("[data-menu-open]")!;
-    const setMenu = (open: boolean) => {
-      sidebar.classList.toggle("is-open", open);
-      backdrop.hidden = !open;
-      openButton.setAttribute("aria-expanded", String(open));
+    const sidebar = () => document.getElementById("sidebar");
+    const openButton = () => document.querySelector<HTMLButtonElement>("[data-menu-open]");
+    const isOpen = () => !!sidebar()?.classList.contains("is-open");
+    const setMenu = (open: boolean, restoreFocus = true) => {
+      const nav = sidebar();
+      if (!nav) return;
+      nav.classList.toggle("is-open", open);
+      const backdrop = document.querySelector<HTMLElement>(".docs__backdrop");
+      if (backdrop) backdrop.hidden = !open;
+      openButton()?.setAttribute("aria-expanded", String(open));
       document.body.style.overflow = open ? "hidden" : "";
-      if (open) sidebar.querySelector<HTMLElement>("a, button")?.focus();
-      else openButton.focus();
+      if (open) nav.querySelector<HTMLElement>("a, button")?.focus();
+      else if (restoreFocus) openButton()?.focus();
     };
-    openButton.addEventListener("click", () => setMenu(true));
-    document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", () => setMenu(false)));
+
+    document.addEventListener("click", (e) => {
+      const target = e.target as Element;
+      if (target.closest("[data-menu-open]")) setMenu(true);
+      else if (target.closest("[data-menu-close]")) setMenu(false);
+    });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && sidebar.classList.contains("is-open")) setMenu(false);
+      if (e.key === "Escape" && isOpen()) setMenu(false);
+    });
+    document.addEventListener("astro:before-swap", () => {
+      if (isOpen()) setMenu(false, false);
+      document.body.style.overflow = "";
     });
 
-    const links = new Map([...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")].map((a) => [a.dataset.tocLink!, a]));
-    const targets = [...links.keys()].map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
-    const markCurrent = () => {
-      let currentId = targets[0]?.id;
-      for (const el of targets) if (el.getBoundingClientRect().top < 120) currentId = el.id;
-      links.forEach((a, id) => a.toggleAttribute("aria-current", id === currentId));
-    };
-    document.addEventListener("scroll", markCurrent, { passive: true });
-    markCurrent();
+    let markCurrent = () => {};
+    document.addEventListener("scroll", () => markCurrent(), { passive: true });
 
-    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const code = button.closest("[data-code]")?.querySelector("pre:not([hidden])")?.innerText ?? "";
-        await navigator.clipboard.writeText(code.replace(/\n$/, ""));
-        const status = button.querySelector(".code__status");
-        button.classList.add("is-copied");
-        if (status) status.textContent = "Copied";
-        setTimeout(() => {
-          button.classList.remove("is-copied");
-          if (status) status.textContent = "";
-        }, 1500);
+    const normalise = (path: string) => path.replace(/\/$/, "");
+
+    document.addEventListener("astro:page-load", () => {
+      const here = normalise(location.pathname);
+      document.querySelectorAll<HTMLAnchorElement>("#sidebar a").forEach((a) => {
+        const current = normalise(new URL(a.href).pathname) === here;
+        if (current) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+        if (current) a.closest("details")?.setAttribute("open", "");
+      });
+
+      const links = new Map([...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")].map((a) => [a.dataset.tocLink!, a]));
+      const targets = [...links.keys()].map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+      markCurrent = () => {
+        let currentId = targets[0]?.id;
+        for (const el of targets) if (el.getBoundingClientRect().top < 120) currentId = el.id;
+        links.forEach((a, id) => a.toggleAttribute("aria-current", id === currentId));
+      };
+      markCurrent();
+
+      document.querySelectorAll<HTMLButtonElement>("main [data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const code = button.closest("[data-code]")?.querySelector("pre:not([hidden])")?.innerText ?? "";
+          await navigator.clipboard.writeText(code.replace(/\n$/, ""));
+          const status = button.querySelector(".code__status");
+          button.classList.add("is-copied");
+          if (status) status.textContent = "Copied";
+          setTimeout(() => {
+            button.classList.remove("is-copied");
+            if (status) status.textContent = "";
+          }, 1500);
+        });
       });
     });
   </script>
