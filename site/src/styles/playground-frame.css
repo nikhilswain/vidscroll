@@ -1,0 +1,20 @@
+body {
+  background: #000;
+}
+
+.pg-section h2 {
+  margin: 0;
+  padding: 0 var(--space-4);
+  color: #fff;
+  font: 500 clamp(2rem, 1.4rem + 3vw, 3.5rem) / 1.05 var(--serif);
+  text-align: center;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 0.6);
+}
+
+.pg-end {
+  display: grid;
+  place-items: center;
+  height: 50vh;
+  color: var(--text-faint);
+  font: 400 13px/1 var(--mono);
+}

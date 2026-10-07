@@ -1,0 +1,14 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { Playground } from "../../components/playground/Playground";
+import { withBase } from "../../lib/url";
+import pkg from "../../../../package.json";
+
+const version = pkg.version.split(".").slice(0, 2).join(".");
+---
+<SiteLayout title="Playground · vidscroll" description="Try vidscroll's options on a live scroll video and copy the matching React or HTML code.">
+  <main id="content" class="pg-page">
+    <h1 class="visually-hidden">vidscroll playground</h1>
+    <Playground client:only="react" base={withBase("")} version={version} />
+  </main>
+</SiteLayout>

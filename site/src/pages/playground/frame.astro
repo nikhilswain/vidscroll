@@ -1,0 +1,19 @@
+---
+import { PlaygroundFrame } from "../../components/playground/PlaygroundFrame";
+import { withBase } from "../../lib/url";
+import "../../styles/base.css";
+import "../../styles/playground-frame.css";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Playground preview</title>
+    <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+  </head>
+  <body>
+    <PlaygroundFrame client:only="react" />
+  </body>
+</html>

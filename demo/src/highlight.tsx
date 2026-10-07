@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 const TOKENS =
-  /(?<string>"[^"]*")|(?<keyword>\b(?:import|from|export|const|return)\b)|(?<tag><\/?[A-Za-z][\w.]*|\/?>)|(?<attr>\b[a-zA-Z]+(?==))|(?<number>\b\d+(?:\.\d+)?\b)|(?<punct>[{}();,=])/g;
+  /(?<string>"[^"]*")|(?<keyword>\b(?:import|from|export|const|return)\b)|(?<tag><\/?[A-Za-z][\w.]*|\/?>)|(?<attr>\b[a-zA-Z][\w-]*(?==))|(?<number>\b\d+(?:\.\d+)?\b)|(?<punct>[{}();,=])/g;
 
 export function highlight(code: string): ReactNode[] {
   const out: ReactNode[] = [];
