@@ -31,7 +31,7 @@ const EASINGS = Object.entries(easing).map(([id, fn]) => ({ id, path: curve(fn) 
 const segments = (name: string, values: string[], selected: string) => ({ name, values, selected });
 const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segments("fit", ["cover", "contain"], "cover")];
 ---
-<figure class="example" data-example data-src={src}>
+<figure class="example" data-example data-src={src} data-frames={entry.frames}>
   {controls && (
     <form class="controls" data-controls-form aria-label="Example options">
       <fieldset class="controls__row">
@@ -219,8 +219,10 @@ const SEGMENTS = [segments("length", ["200vh", "400vh", "800vh"], "400vh"), segm
       return;
     }
     const total = Number.isInteger(Math.round(screens * 10) / 10) ? screens.toFixed(0) : screens.toFixed(1);
-    readout.innerHTML =
-      `<b>video</b> ${time.toFixed(1)} / ${duration.toFixed(1)} s` +
-      `    <b>scroll</b> ${scrolled.toFixed(1)} / ${total} ${total === "1" ? "screen" : "screens"}`;
+    const frames = Number(example.dataset.frames);
+    const media = frames
+      ? `<b>frame</b> ${Math.round(progress * (frames - 1)) + 1} / ${frames}`
+      : `<b>video</b> ${time.toFixed(1)} / ${duration.toFixed(1)} s`;
+    readout.innerHTML = `${media}    <b>scroll</b> ${scrolled.toFixed(1)} / ${total} ${total === "1" ? "screen" : "screens"}`;
   });
 </script>

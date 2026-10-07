@@ -32,7 +32,7 @@ export const NAV: NavGroup[] = [
       { title: "ScrollVideo", slug: "react/scroll-video" },
       { title: "Section", slug: "react/section" },
       { title: "Hooks", slug: "react/hooks" },
-      { title: "ScrollFrames" },
+      { title: "ScrollFrames", slug: "react/scroll-frames" },
     ],
   },
   {

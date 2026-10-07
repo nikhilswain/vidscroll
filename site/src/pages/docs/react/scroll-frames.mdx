@@ -1,0 +1,116 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: ScrollFrames
+description: Scrub through a sequence of images instead of a video.
+slug: react/scroll-frames
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Table from "../../../components/Table.astro";
+import Example from "../../../components/Example.astro";
+import Callout from "../../../components/Callout.astro";
+import PropsTable from "../../../components/PropsTable.astro";
+
+export const components = { pre: Pre, a: Link, table: Table };
+
+`ScrollFrames` works like `ScrollVideo`, but its source is a numbered series of
+images, drawn to a canvas. There's no video decoding, so every frame is exact
+and shows instantly once it has loaded.
+
+<Example name="frames" />
+
+## When to use it
+
+<Table>
+  <thead>
+    <tr><th></th><th><code>ScrollVideo</code></th><th><code>ScrollFrames</code></th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Source</td><td>One video file</td><td>A numbered series of images</td></tr>
+    <tr><td>Download size</td><td>Small: video compresses frames against each other</td><td>Larger: every frame is a full image</td></tr>
+    <tr><td>Frames</td><td>Hundreds or thousands</td><td>Best up to a few hundred</td></tr>
+    <tr><td>Scrubbing</td><td>Smooth once keyframes are close</td><td>Exact from the start, no preparation</td></tr>
+    <tr><td>Loading screen</td><td>Built in</td><td>None: it starts as soon as enough frames are in</td></tr>
+  </tbody>
+</Table>
+
+Use `ScrollFrames` when you already have frames, such as 3D renders or a
+product turntable, or need pixel-exact stills. For filmed footage or anything
+long, `ScrollVideo` downloads far less.
+
+## Pointing it at your images
+
+`count` is the number of images. `urls` describes where they are, in one of
+three ways:
+
+```tsx title="Turntable.tsx"
+import { ScrollFrames } from "vidscroll";
+
+export function Turntable() {
+  return <ScrollFrames urls="/frames/frame_{i3}.webp" count={120} length="300vh" />;
+}
+```
+
+<Table>
+  <thead>
+    <tr><th><code>urls</code></th><th>Example</th><th>Gives</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>A pattern with <code>{"{i}"}</code></td><td><code>{"\"/frames/{i}.jpg\""}</code></td><td><code>/frames/0.jpg</code>, <code>/frames/1.jpg</code> …</td></tr>
+    <tr><td>A pattern with <code>{"{iN}"}</code>, padded to N digits</td><td><code>{"\"/frames/frame_{i3}.webp\""}</code></td><td><code>/frames/frame_000.webp</code>, <code>/frames/frame_001.webp</code> …</td></tr>
+    <tr><td>An array</td><td><code>{"[a, b, c]"}</code></td><td>Those URLs, in order</td></tr>
+    <tr><td>A function</td><td><code>{"(i) => `/f/${i + 1}.png`"}</code></td><td>Whatever it returns for each index</td></tr>
+  </tbody>
+</Table>
+
+Numbering starts at 0. If your files start at 1, use a function. With an array,
+set `count` to the array's length.
+
+## Loading
+
+Frames load in order, 12 at a time. The component starts following the scroll
+once the first frame and a tenth of the rest have loaded. Until a frame is
+there, the nearest loaded one is shown, and between two frames the next one
+fades in over the current one, so slow scrolling looks smooth even with few
+frames.
+
+There's no loading overlay, so the first frame should work as a still on its
+own. On high-density screens the canvas is drawn at up to twice the CSS size.
+
+## Length and sections
+
+`length` works as in `ScrollVideo`. With the default `"auto"`, the length comes
+from the frame count: `count` divided by `fps` (30 by default) gives a duration,
+at 40vh of scrolling per second. Setting `length` yourself is usually clearer.
+
+Sections can use `start` and `end`, or frame numbers with `fromFrame` and
+`toFrame`. Hooks and `--video-progress` work the same as with a video.
+
+<Callout kind="warning" title="No time-based ranges">
+  An image sequence has no duration, so `fromTime` and `toTime` on sections,
+  and `api.scrollToTime`, have no effect here. Use frame numbers, progress, and
+  `api.scrollToProgress` instead.
+</Callout>
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "urls", type: "string | string[] | (i) => string", default: "required", description: "Where the images are: a pattern, an array or a function.", href: "#pointing-it-at-your-images" },
+    { name: "count", type: "number", default: "required", description: "Number of frames." },
+    { name: "length", type: "string | number", default: '"auto"', description: "Scrolling that covers all frames.", href: "#length-and-sections" },
+    { name: "fps", type: "number", default: "30", description: "Frame rate, used for <code>\"auto\"</code> length and the reported time." },
+    { name: "easing", type: "EasingName | (t) => number", default: '"none"', description: "Curve from scroll progress to frame." },
+    { name: "fit", type: '"cover" | "contain"', default: '"cover"', description: "How frames fill the screen. Read when the component starts." },
+    { name: "smoothScroll", type: "boolean | SmoothScrollOptions", default: "false", description: "Eased mouse-wheel scrolling for the page." },
+    { name: "smoothingTauMs", type: "number", default: "100", description: "How closely the frames follow the scroll, in ms. 35 when <code>smoothScroll</code> is on." },
+    { name: "debug", type: "boolean", default: "false", description: "Log engine internals to the console." },
+    { name: "className, style", type: "string, CSSProperties", description: "Applied to the outer block." },
+  ]}
+/>
+
+## Related
+
+- [ScrollVideo](/docs/react/scroll-video/): the same, with a video file.
+- [Section](/docs/react/section/): ranges and `--progress`.

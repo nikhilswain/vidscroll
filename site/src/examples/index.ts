@@ -7,6 +7,8 @@ import progress from "./progress";
 import progressSource from "./progress.tsx?raw";
 import hooks from "./hooks";
 import hooksSource from "./hooks.tsx?raw";
+import frames from "./frames";
+import framesSource from "./frames.tsx?raw";
 
 export interface TimelineRange {
   id: string;
@@ -20,6 +22,7 @@ export interface ExampleEntry {
   component?: ComponentType<never>;
   source?: string;
   lang?: "tsx" | "html";
+  frames?: number;
   timeline: TimelineRange[];
 }
 
@@ -44,6 +47,16 @@ export const EXAMPLES: Record<string, ExampleEntry> = {
     component: hooks,
     source: hooksSource,
     timeline: [],
+  },
+  frames: {
+    title: "An image sequence with ScrollFrames",
+    component: frames,
+    source: framesSource,
+    frames: 87,
+    timeline: [
+      { id: "stills", label: "start 0, end 0.4", start: 0, end: 0.4 },
+      { id: "water", label: "frames 50 to 75", start: 50 / 87, end: 75 / 87 },
+    ],
   },
   element: {
     title: "The <vid-scroll> element",
