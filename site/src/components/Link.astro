@@ -1,0 +1,7 @@
+---
+import { withBase } from "../lib/url";
+
+const { href, ...rest } = Astro.props as { href?: string } & Record<string, unknown>;
+const internal = typeof href === "string" && href.startsWith("/") && !href.startsWith("//");
+---
+<a href={internal ? withBase(href) : href} {...rest}><slot /></a>

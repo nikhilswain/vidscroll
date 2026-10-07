@@ -1,0 +1,101 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Introduction
+description: Scroll-scrubbed video for React. Scrolling moves a video frame by frame, with content that appears along the way.
+slug: start/introduction
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Example from "../../../components/Example.astro";
+import PackageTabs from "../../../components/PackageTabs.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link };
+
+vidscroll ties a video to the page scroll. While you scroll through it, the
+video stays pinned to the screen and moves forward or backward with you, frame
+by frame. Text and other content can appear over it at chosen moments.
+
+Scroll inside the example to try it. The strip underneath shows where you are
+in the video and which part of the story is on screen.
+
+<Example name="basic" />
+
+## What you write
+
+A video file, how much scrolling it should take, and the content to show
+along the way:
+
+```tsx title="Hero.tsx"
+import { ScrollVideo, Section } from "vidscroll";
+
+export function Hero() {
+  return (
+    <ScrollVideo src="/videos/hero.mp4" length="400vh">
+      <Section start={0} end={0.3}>
+        <h2>Doors close</h2>
+      </Section>
+    </ScrollVideo>
+  );
+}
+```
+
+<PackageTabs pkg="vidscroll" />
+
+React 18 and 19 are supported, including Next.js. For other frameworks or plain
+HTML there is an experimental `<vid-scroll>` element.
+
+## Why scroll-driven video is hard
+
+Playing a video forward is cheap. Jumping around in one is not, and scrolling
+means jumping on every frame.
+
+Videos are stored as occasional complete pictures, called **keyframes**, with
+only the changes in between. To show any frame, the browser has to start from
+the keyframe before it and work forward. Most exported videos have keyframes a
+few seconds apart, because that makes files smaller. Each small scroll then
+asks the browser to decode dozens of frames before it can show one, which looks
+like stutter. Scrolling backwards is worse.
+
+vidscroll deals with this in two ways:
+
+- **Automatically.** It checks how far apart a video's keyframes are. If they
+  are too far apart, it re-encodes the video in the browser with closely spaced
+  keyframes, keeps the result in the browser's cache, and swaps it in at the
+  same frame. You can scroll the original in the meantime.
+- **Ahead of time.** `npx vidscroll encode hero.mp4` prepares the file before
+  you deploy it, so visitors never wait for the re-encode.
+
+[How it works](/docs/start/how-it-works/) explains both in detail.
+
+## When to use it
+
+vidscroll fits pages where the reader controls the pace of a video:
+
+- product pages and launch pages that walk through an object or a feature
+- storytelling and scrollytelling, with text tied to scenes
+- landing page heroes that respond to the first scroll
+- chapter-based scenes you can jump between
+
+It is less suited to:
+
+- **Videos with sound.** Scroll-driven video is always muted, and the
+  in-browser re-encode drops the audio.
+- **Long videos.** Anything over about two minutes or 100 MB gets slow to
+  download and re-encode; vidscroll warns in the console. Trim it or prepare it
+  with the CLI.
+- **Background loops that play on their own.** A plain `<video autoplay muted
+  loop>` does that with less work.
+- **YouTube, Vimeo and other video pages.** Their streams can't be read by
+  other sites. Use a file you host.
+
+<Callout title="Try it on a phone">
+  Most visitors scroll on phones. Open this page on yours: the examples start
+  when you tap them.
+</Callout>
+
+## Next steps
+
+- [How it works](/docs/start/how-it-works/): from a scroll position to a frame on screen.
+- [ScrollVideo](/docs/react/scroll-video/): the main component and all its options.

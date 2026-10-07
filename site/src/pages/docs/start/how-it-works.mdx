@@ -1,0 +1,113 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: How it works
+description: From a scroll position to a frame on screen, and what happens while a video loads.
+slug: start/how-it-works
+---
+
+import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
+import Flow from "../../../components/Flow.astro";
+import KeyframeStrip from "../../../components/KeyframeStrip.astro";
+import Callout from "../../../components/Callout.astro";
+
+export const components = { pre: Pre, a: Link };
+
+A scroll video is a tall block on the page with a screen-sized stage inside it.
+The stage is pinned with CSS (`position: sticky`) while the block scrolls past,
+so the video stays in view. Everything else is about choosing the right frame
+for the current scroll position and getting it on screen fast.
+
+## From scroll to frame
+
+On every scroll and every animation frame, vidscroll runs the same chain:
+
+<Flow
+  label="From scroll position to frame"
+  steps={[
+    { title: "Scroll position", text: "Where the block is relative to the top of the screen." },
+    { title: "Progress", text: "How far through the block you are, from 0 to 1." },
+    { title: "Smoothing", text: "Progress follows the scroll with a short delay, so steps glide." },
+    { title: "Easing", text: "An optional curve reshapes progress: slow start, gentle stop." },
+    { title: "Video time", text: "The eased value times the duration." },
+    { title: "Frame", text: "The video seeks there and the frame is drawn." },
+  ]}
+/>
+
+Each step maps to an option. `length` sets how much scrolling covers the whole
+video, `smoothingTauMs` and `smoothScroll` set how the motion feels, and
+`easing` sets the curve. Progress is also exposed to your own code: as the
+`--video-progress` CSS variable, through hooks, and through events.
+
+Getting the frame on screen is the expensive part. vidscroll asks the video for
+one frame at a time and waits until that frame has actually been drawn before
+asking for the next, so slow seeks never pile up. While a video is still being
+prepared, and on Android, scrolling forward plays the video at a speed that
+follows the scroll instead of seeking, which is smoother there.
+
+## Why keyframes decide everything
+
+A video file doesn't store every frame as a full picture. It stores a complete
+picture every so often, a **keyframe**, and only the differences in between. To
+show a given frame, the browser decodes from the keyframe before it.
+
+<KeyframeStrip
+  label="A typical exported video"
+  every={4}
+  note="A keyframe every few seconds. Showing a frame can mean decoding 100+ frames first."
+/>
+
+<KeyframeStrip
+  label="A video prepared for scrubbing"
+  every={0.33}
+  note="A keyframe every third of a second. Any frame is at most about 10 frames away."
+/>
+
+Playing forward only ever needs the next frame, so spacing doesn't matter for
+normal playback. Scrubbing jumps to arbitrary points dozens of times a second,
+so with sparse keyframes every jump is slow, and jumping backwards is slowest.
+
+## What happens when a video loads
+
+With the default settings, `ScrollVideo` downloads the whole file first, so it
+can read the keyframe layout:
+
+<Flow
+  label="What happens when a video loads"
+  steps={[
+    { title: "Download", text: "The file is fetched, with progress in the loader." },
+    { title: "Check keyframes", text: "Gaps up to 0.5 s are fine and the file is used as is." },
+    { title: "Show the original", text: "If the gaps are larger, the original goes on screen right away and can be scrolled." },
+    { title: "Re-encode", text: "In the background, using the browser's video encoder (WebCodecs)." },
+    { title: "Swap and cache", text: "The new copy replaces the original at the same frame and is kept for the next visit." },
+  ]}
+/>
+
+The re-encoded copy has a keyframe every quarter of a second, is capped at 720p
+on its short side and 30 frames per second, and has no audio. A small badge in
+the corner shows progress while it runs. On later visits the cached copy loads
+straight away, until the source file changes.
+
+Things that change this path:
+
+- **Prepared files** skip the re-encode entirely. Run
+  `npx vidscroll encode hero.mp4` before deploying; it's the recommended setup
+  for production.
+- **Browsers without WebCodecs** use the original as is and log a warning, so
+  scrubbing is only as smooth as the file allows.
+- **Files from other sites** must allow it with CORS. If they don't, vidscroll
+  streams them directly instead and warns that scrubbing will be slow.
+- **`fullPreload={false}`** streams the file directly and skips all of this.
+
+<Callout title="Caching needs a fingerprint">
+  The cache recognises a file by its `ETag`, `Last-Modified` or
+  `Content-Length` header. Most hosts send these. If yours sends none of them,
+  the re-encode runs on every visit.
+</Callout>
+
+## One engine, three ways in
+
+`<ScrollVideo>` in React, the `<vid-scroll>` element and `createScrollVideo`
+from `vidscroll/core` all drive the same engine, so they load, scrub and
+behave the same. The React components add sections, hooks and context on top;
+the element and the core API are for pages without React.

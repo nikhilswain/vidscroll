@@ -4,7 +4,7 @@ import pkg from "../../../package.json";
 
 const links = [
   { title: "Demos", href: withBase("") },
-  { title: "Docs", href: withBase("docs/react/scroll-video") },
+  { title: "Docs", href: withBase("docs/start/introduction/") },
   { title: "Playground", href: undefined },
 ];
 const current = Astro.url.pathname;
@@ -20,7 +20,7 @@ const current = Astro.url.pathname;
   <nav class="header__nav" aria-label="Site">
     {links.map((link) =>
       link.href ? (
-        <a href={link.href} aria-current={current.startsWith(link.href) && link.title === "Docs" ? "page" : undefined}>{link.title}</a>
+        <a href={link.href} aria-current={link.title === "Docs" && current.includes("/docs/") ? "page" : undefined}>{link.title}</a>
       ) : (
         <span class="header__soon" title="Coming later">{link.title}</span>
       )

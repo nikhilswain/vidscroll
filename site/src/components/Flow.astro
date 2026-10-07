@@ -1,0 +1,19 @@
+---
+interface Step {
+  title: string;
+  text: string;
+}
+interface Props {
+  steps: Step[];
+  label: string;
+}
+const { steps, label } = Astro.props;
+---
+<ol class="flow" aria-label={label}>
+  {steps.map((step) => (
+    <li class="flow__step">
+      <span class="flow__title">{step.title}</span>
+      <span class="flow__text" set:html={step.text} />
+    </li>
+  ))}
+</ol>

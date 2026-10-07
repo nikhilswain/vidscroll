@@ -6,12 +6,13 @@ slug: react/scroll-video
 ---
 
 import Pre from "../../../components/Pre.astro";
+import Link from "../../../components/Link.astro";
 import Example from "../../../components/Example.astro";
 import PackageTabs from "../../../components/PackageTabs.astro";
 import Callout from "../../../components/Callout.astro";
 import PropsTable from "../../../components/PropsTable.astro";
 
-export const components = { pre: Pre };
+export const components = { pre: Pre, a: Link };
 
 `<ScrollVideo>` takes up a block of the page. While you scroll through that
 block, the video stays pinned to the screen and its position follows the
@@ -68,11 +69,11 @@ export function Hero() {
 Every frame, vidscroll turns the scroll position into a point in the video:
 
 1. **Progress.** How far you are through the block, from 0 to 1.
-2. **Easing.** An optional curve that reshapes progress, so the video can
-   start slowly or settle at the end.
-3. **Video time.** The eased value times the video's duration.
-4. **Smoothing.** The video follows that time with a short delay, so small
+2. **Smoothing.** Progress follows the scroll with a short delay, so small
    scroll steps glide instead of jumping.
+3. **Easing.** An optional curve that reshapes progress, so the video can
+   start slowly or settle at the end.
+4. **Video time.** The eased value times the video's duration.
 
 Three props control this: `length` sets how much scrolling covers the video,
 `easing` sets the curve, and `smoothScroll` with `smoothingTauMs` set how the
@@ -169,6 +170,7 @@ starts.
 
 ## Related
 
+- [How it works](/docs/start/how-it-works/): the full chain from scroll to frame, and loading.
 - Section: ranges, active state and the `--progress` variable.
 - Hooks: read progress, time and active sections from your own components.
 - Preparing videos: why keyframes matter and how to pre-encode with the CLI.

@@ -5,11 +5,13 @@ import react from "@astrojs/react";
 import { vidscrollTheme } from "./src/lib/shiki-theme.mjs";
 import { codeMeta } from "./src/lib/shiki-transformers.mjs";
 
+const base = process.env.SITE_BASE ?? "/vidscroll";
+
 const src = (path) => fileURLToPath(new URL(`../src/${path}`, import.meta.url));
 
 export default defineConfig({
   site: process.env.SITE_URL ?? "https://nikhilswain.github.io",
-  base: process.env.SITE_BASE ?? "/vidscroll",
+  base,
   trailingSlash: "ignore",
   publicDir: "../demo/public",
   outDir: "../dist-site",

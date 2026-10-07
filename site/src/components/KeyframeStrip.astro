@@ -1,0 +1,17 @@
+---
+interface Props {
+  label: string;
+  every: number;
+  duration?: number;
+  note: string;
+}
+const { label, every, duration = 30, note } = Astro.props;
+const ticks = Array.from({ length: Math.floor(duration / every) + 1 }, (_, i) => (i * every) / duration).filter((t) => t <= 1);
+---
+<figure class="keyframes">
+  <figcaption class="keyframes__label">{label}</figcaption>
+  <div class="keyframes__track" role="img" aria-label={`${label}: ${note}`}>
+    {ticks.map((t) => <span class="keyframes__tick" style={`left: ${t * 100}%`} />)}
+  </div>
+  <p class="keyframes__note">{note}</p>
+</figure>

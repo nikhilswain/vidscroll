@@ -12,7 +12,10 @@ export interface NavGroup {
 export const NAV: NavGroup[] = [
   {
     title: "Start here",
-    items: [{ title: "Introduction" }, { title: "How it works" }],
+    items: [
+      { title: "Introduction", slug: "start/introduction" },
+      { title: "How it works", slug: "start/how-it-works" },
+    ],
   },
   {
     title: "Get started",
@@ -79,7 +82,7 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-export const docsHref = (slug: string) => `docs/${slug}`;
+export const docsHref = (slug: string) => `docs/${slug}/`;
 
 export function neighbours(slug: string) {
   const pages = NAV.flatMap((g) => g.items.map((item) => ({ ...item, group: g.title })));
